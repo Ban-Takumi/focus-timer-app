@@ -1,5 +1,9 @@
+"""
+データベースの設定とセッション管理。
+"""
 from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
+from typing import Generator
 
 SQLALCHEMY_DATABASE_URL = "sqlite:///./pomodoro.db"
 
@@ -11,7 +15,11 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
 # Dependency
-def get_db():
+def get_db() -> Generator:
+    """
+    データベースセッションを取得するための依存関係（Dependency）関数。
+    一連の操作に対するトランザクションスコープを提供します。
+    """
     db = SessionLocal()
     try:
         yield db
