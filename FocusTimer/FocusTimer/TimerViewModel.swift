@@ -47,7 +47,7 @@ class TimerViewModel: ObservableObject {
     
     // バックエンドへ記録を送信
     private func saveRecord() {
-        guard let url = URL(string: "http://127.0.0.1:8000/records/") else { return }
+        guard let url = URL(string: "https://focus-timer-app-6u58.onrender.com/records/") else { return }
         
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
