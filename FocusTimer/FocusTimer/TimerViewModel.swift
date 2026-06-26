@@ -1,5 +1,6 @@
 import Foundation
 import Combine
+import WidgetKit
 
 class TimerViewModel: ObservableObject {
     @Published var timeRemaining: Int = 25 * 60
@@ -75,6 +76,10 @@ class TimerViewModel: ObservableObject {
             if let httpResponse = response as? HTTPURLResponse {
                 print("ステータスコード: \(httpResponse.statusCode)")
             }
+            
+            // 通信成功後にウィジェットの表示を強制的に更新（リロード）する
+            WidgetCenter.shared.reloadAllTimelines()
+            
         }.resume()
     }
 }
