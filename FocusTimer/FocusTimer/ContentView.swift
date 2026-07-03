@@ -17,9 +17,10 @@ struct ContentView: View {
     
     var body: some View {
         VStack(spacing: 30) {
-            Text("Focus Timer")
+            Text(viewModel.mode.rawValue)
                 .font(.largeTitle)
                 .fontWeight(.bold)
+                .foregroundColor(viewModel.mode == .focus ? .primary : .blue)
             
             Text(timeString)
                 .font(.system(size: 80, weight: .medium, design: .monospaced))
@@ -36,7 +37,7 @@ struct ContentView: View {
                     Text(viewModel.isRunning ? "Pause" : "Start")
                         .font(.title2)
                         .frame(width: 100, height: 40)
-                        .background(viewModel.isRunning ? Color.orange : Color.green)
+                        .background(viewModel.isRunning ? Color.orange : (viewModel.mode == .focus ? Color.green : Color.blue))
                         .foregroundColor(.white)
                         .cornerRadius(10)
                 }

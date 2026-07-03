@@ -2,12 +2,19 @@ import Foundation
 import Combine
 import WidgetKit
 
+enum TimerMode: String {
+    case focus = "Focus Time"
+    case breakTime = "Break Time"
+}
+
 class TimerViewModel: ObservableObject {
+    @Published var mode: TimerMode = .focus
     @Published var timeRemaining: Int = 25 * 60
     @Published var isRunning: Bool = false
     
     private var timer: AnyCancellable?
-    private let defaultTime: Int = 25 * 60
+    private let focusTime: Int = 25 * 60
+    private let breakTime: Int = 5 * 60
     
     // タイマー開始
     func start() {
@@ -37,13 +44,23 @@ class TimerViewModel: ObservableObject {
     // タイマーリセット
     func reset() {
         stop()
-        timeRemaining = defaultTime
+        timeRemaining = mode == .focus ? focusTime : breakTime
     }
     
     // 0になったときの処理
     private func timerFinished() {
         stop()
-        saveRecord()
+        
+        if mode == .focus {
+            // 集中モード終了：記録を保存し、休憩モードへ移行
+            saveRecord()
+            mode = .breakTime
+            timeRemaining = breakTime
+        } else {
+            // 休憩モード終了：集中モードへ戻る（記録はしない）
+            mode = .focus
+            timeRemaining = focusTime
+        }
     }
     
     // バックエンドへ記録を送信
