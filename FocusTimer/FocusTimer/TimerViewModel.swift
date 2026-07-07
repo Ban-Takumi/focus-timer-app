@@ -40,9 +40,9 @@ class TimerViewModel: ObservableObject {
     private var timer: AnyCancellable?
     
     // ベースURL: ローカルテスト用に 127.0.0.1 をデフォルトとする
-    private let baseURL = "http://127.0.0.1:8000"
+    // private let baseURL = "http://127.0.0.1:8000"
     // 本番（Render）に繋ぐ場合は以下のように変更
-    // private let baseURL = "https://focus-timer-app-6u58.onrender.com"
+    private let baseURL = "https://focus-timer-app-6u58.onrender.com"
     
     init() {
         fetchPresets()
