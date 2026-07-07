@@ -8,6 +8,26 @@ import SwiftUI
 struct ContentView: View {
     @StateObject private var viewModel = TimerViewModel()
     
+    var body: some View {
+        TabView {
+            TimerView(viewModel: viewModel)
+                .tabItem {
+                    Label("タイマー", systemImage: "timer")
+                }
+            
+            SettingsView(viewModel: viewModel)
+                .tabItem {
+                    Label("設定", systemImage: "gearshape")
+                }
+        }
+        // ウィンドウの最小サイズを指定（Mac用）
+        .frame(minWidth: 350, minHeight: 400)
+    }
+}
+
+struct TimerView: View {
+    @ObservedObject var viewModel: TimerViewModel
+    
     // 残り時間を "MM:SS" の形式にする
     var timeString: String {
         let minutes = viewModel.timeRemaining / 60
@@ -16,11 +36,17 @@ struct ContentView: View {
     }
     
     var body: some View {
-        VStack(spacing: 30) {
+        VStack(spacing: 20) {
             Text(viewModel.mode.rawValue)
                 .font(.largeTitle)
                 .fontWeight(.bold)
                 .foregroundColor(viewModel.mode == .focus ? .primary : .blue)
+            
+            if let preset = viewModel.selectedPreset {
+                Text("Preset: \(preset.name)")
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+            }
             
             Text(timeString)
                 .font(.system(size: 80, weight: .medium, design: .monospaced))
@@ -41,6 +67,7 @@ struct ContentView: View {
                         .foregroundColor(.white)
                         .cornerRadius(10)
                 }
+                .buttonStyle(PlainButtonStyle())
                 
                 Button(action: {
                     viewModel.reset()
@@ -52,11 +79,10 @@ struct ContentView: View {
                         .foregroundColor(.white)
                         .cornerRadius(10)
                 }
+                .buttonStyle(PlainButtonStyle())
             }
         }
         .padding()
-        // ウィンドウの最小サイズを指定（Mac用）
-        .frame(minWidth: 300, minHeight: 300)
     }
 }
 

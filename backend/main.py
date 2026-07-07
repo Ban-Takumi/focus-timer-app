@@ -4,7 +4,7 @@ from datetime import date
 from typing import List
 
 import models, schemas
-from database import engine, get_db
+from database import engine, get_db, SessionLocal
 
 # -------------------------------------------------------------------
 # アプリケーションの初期設定
@@ -12,6 +12,20 @@ from database import engine, get_db
 
 # データベースのテーブルを作成（存在しない場合のみ）
 models.Base.metadata.create_all(bind=engine)
+
+# デフォルトプリセットの初期化
+db = SessionLocal()
+try:
+    if db.query(models.TimerPreset).count() == 0:
+        defaults = [
+            models.TimerPreset(name="学習", focus_minutes=50, break_minutes=10),
+            models.TimerPreset(name="ポモドーロ", focus_minutes=25, break_minutes=5),
+            models.TimerPreset(name="ショート", focus_minutes=15, break_minutes=5)
+        ]
+        db.add_all(defaults)
+        db.commit()
+finally:
+    db.close()
 
 app = FastAPI(
     title="Pomodoro Timer API",
@@ -90,3 +104,52 @@ def get_today_stats(db: Session = Depends(get_db)) -> schemas.StatsResponse:
     total_minutes = sum(record.duration_minutes for record in records)
     
     return schemas.StatsResponse(date=today, total_duration_minutes=total_minutes)
+
+# -------------------------------------------------------------------
+# プリセット用エンドポイント
+# -------------------------------------------------------------------
+
+@app.get(
+    "/presets/",
+    response_model=List[schemas.PresetResponse],
+    summary="プリセット一覧の取得",
+    response_description="保存されているプリセットのリスト"
+)
+def read_presets(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)) -> List[schemas.PresetResponse]:
+    """
+    データベースに保存されているすべてのプリセットを取得する。
+    """
+    return db.query(models.TimerPreset).offset(skip).limit(limit).all()
+
+
+@app.post(
+    "/presets/",
+    response_model=schemas.PresetResponse,
+    summary="プリセットの作成",
+    response_description="保存されたプリセットのデータ"
+)
+def create_preset(preset: schemas.PresetCreate, db: Session = Depends(get_db)) -> schemas.PresetResponse:
+    """
+    新しいプリセットを作成してデータベースに保存する。
+    """
+    db_preset = models.TimerPreset(**preset.dict())
+    db.add(db_preset)
+    db.commit()
+    db.refresh(db_preset)
+    return db_preset
+
+
+@app.delete(
+    "/presets/{preset_id}",
+    summary="プリセットの削除",
+    response_description="削除成功のメッセージ"
+)
+def delete_preset(preset_id: int, db: Session = Depends(get_db)):
+    """
+    指定されたIDのプリセットを削除する。
+    """
+    db_preset = db.query(models.TimerPreset).filter(models.TimerPreset.id == preset_id).first()
+    if db_preset:
+        db.delete(db_preset)
+        db.commit()
+    return {"message": "Preset deleted successfully"}
