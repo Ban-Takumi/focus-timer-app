@@ -1,6 +1,6 @@
 from fastapi import FastAPI, Depends
 from sqlalchemy.orm import Session
-from datetime import date
+from datetime import date, timedelta
 from typing import List
 
 import models, schemas
@@ -104,6 +104,45 @@ def get_today_stats(db: Session = Depends(get_db)) -> schemas.StatsResponse:
     total_minutes = sum(record.duration_minutes for record in records)
     
     return schemas.StatsResponse(date=today, total_duration_minutes=total_minutes)
+
+@app.get(
+    "/stats/weekly",
+    response_model=List[schemas.StatsResponse],
+    summary="過去7日間の統計データの取得",
+    response_description="過去7日間の日別合計集中時間のリスト"
+)
+def get_weekly_stats(db: Session = Depends(get_db)) -> List[schemas.StatsResponse]:
+    """
+    今週（日曜日から土曜日）の記録を集計し、日ごとの合計集中時間（分）のリストを返す。
+    ウィジェットのグラフ表示に使用される。
+    """
+    today = date.today()
+    # isoweekday()は月曜が1、日曜が7。日曜始まりにするため、日曜なら0日前、月曜なら1日前...戻る
+    days_to_subtract = today.isoweekday() % 7
+    start_date = today - timedelta(days=days_to_subtract)
+    end_date = start_date + timedelta(days=6)
+    
+    # 今週1週間の記録をまとめて取得
+    records = db.query(models.PomodoroRecord).filter(
+        models.PomodoroRecord.date >= start_date,
+        models.PomodoroRecord.date <= end_date
+    ).all()
+    
+    # 日付ごとの集計用辞書を初期化（0で埋める）
+    stats_dict = {start_date + timedelta(days=i): 0 for i in range(7)}
+    
+    # 記録を集計
+    for record in records:
+        if record.date in stats_dict:
+            stats_dict[record.date] += record.duration_minutes
+            
+    # レスポンス形式に変換（日付順）
+    result = [
+        schemas.StatsResponse(date=d, total_duration_minutes=mins)
+        for d, mins in sorted(stats_dict.items())
+    ]
+    
+    return result
 
 # -------------------------------------------------------------------
 # プリセット用エンドポイント
