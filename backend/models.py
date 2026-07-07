@@ -16,3 +16,15 @@ class PomodoroRecord(Base):
     duration_minutes = Column(Integer)
     date = Column(Date, index=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+class TimerPreset(Base):
+    """
+    タイマーの時間設定プリセットを表します。
+    """
+    __tablename__ = "presets"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, index=True)
+    focus_minutes = Column(Integer)
+    break_minutes = Column(Integer)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())

@@ -7,14 +7,46 @@ enum TimerMode: String {
     case breakTime = "Break Time"
 }
 
+struct TimerPreset: Identifiable, Codable, Hashable {
+    var id: Int?
+    var name: String
+    var focus_minutes: Int
+    var break_minutes: Int
+}
+
 class TimerViewModel: ObservableObject {
     @Published var mode: TimerMode = .focus
-    @Published var timeRemaining: Int = 25 * 60
+    @Published var timeRemaining: Int = 50 * 60
     @Published var isRunning: Bool = false
     
+    @Published var presets: [TimerPreset] = []
+    @Published var selectedPreset: TimerPreset? {
+        didSet {
+            if let preset = selectedPreset, !isRunning {
+                focusTime = preset.focus_minutes * 60
+                breakTime = preset.break_minutes * 60
+                if mode == .focus {
+                    timeRemaining = focusTime
+                } else {
+                    timeRemaining = breakTime
+                }
+            }
+        }
+    }
+    
+    @Published var focusTime: Int = 50 * 60
+    @Published var breakTime: Int = 10 * 60
+    
     private var timer: AnyCancellable?
-    private let focusTime: Int = 25 * 60
-    private let breakTime: Int = 5 * 60
+    
+    // ベースURL: ローカルテスト用に 127.0.0.1 をデフォルトとする
+    private let baseURL = "http://127.0.0.1:8000"
+    // 本番（Render）に繋ぐ場合は以下のように変更
+    // private let baseURL = "https://focus-timer-app-6u58.onrender.com"
+    
+    init() {
+        fetchPresets()
+    }
     
     // タイマー開始
     func start() {
@@ -63,9 +95,82 @@ class TimerViewModel: ObservableObject {
         }
     }
     
+    // バックエンドからプリセットを取得
+    func fetchPresets() {
+        guard let url = URL(string: "\(baseURL)/presets/") else { return }
+        
+        URLSession.shared.dataTask(with: url) { [weak self] data, response, error in
+            if let error = error {
+                print("プリセット取得エラー: \(error)")
+                return
+            }
+            guard let data = data else { return }
+            do {
+                let decoded = try JSONDecoder().decode([TimerPreset].self, from: data)
+                DispatchQueue.main.async {
+                    self?.presets = decoded
+                    // デフォルトプリセットをセット (未選択の場合のみ。学習:50分/10分を優先)
+                    if self?.selectedPreset == nil {
+                        if let defaultPreset = decoded.first(where: { $0.name == "学習" }) {
+                            self?.selectedPreset = defaultPreset
+                        } else if let firstPreset = decoded.first {
+                            self?.selectedPreset = firstPreset
+                        }
+                    }
+                }
+            } catch {
+                print("プリセットデコードエラー: \(error)")
+            }
+        }.resume()
+    }
+    
+    // バックエンドにプリセットを作成
+    func createPreset(name: String, focusMinutes: Int, breakMinutes: Int) {
+        guard let url = URL(string: "\(baseURL)/presets/") else { return }
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        let presetData: [String: Any] = [
+            "name": name,
+            "focus_minutes": focusMinutes,
+            "break_minutes": breakMinutes
+        ]
+        
+        do {
+            request.httpBody = try JSONSerialization.data(withJSONObject: presetData, options: [])
+        } catch {
+            print("エンコードエラー: \(error)")
+            return
+        }
+        
+        URLSession.shared.dataTask(with: request) { [weak self] data, response, error in
+            if let error = error {
+                print("通信エラー: \(error)")
+                return
+            }
+            self?.fetchPresets()
+        }.resume()
+    }
+
+    // プリセットを削除
+    func deletePreset(id: Int) {
+        guard let url = URL(string: "\(baseURL)/presets/\(id)") else { return }
+        var request = URLRequest(url: url)
+        request.httpMethod = "DELETE"
+        
+        URLSession.shared.dataTask(with: request) { [weak self] data, response, error in
+            if let error = error {
+                print("削除エラー: \(error)")
+                return
+            }
+            self?.fetchPresets()
+        }.resume()
+    }
+    
     // バックエンドへ記録を送信
     private func saveRecord() {
-        guard let url = URL(string: "https://focus-timer-app-6u58.onrender.com/records/") else { return }
+        guard let url = URL(string: "\(baseURL)/records/") else { return }
         
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
@@ -73,8 +178,8 @@ class TimerViewModel: ObservableObject {
         
         // 送信するデータ（スキーマに合わせて作成）
         let recordData: [String: Any] = [
-            "task_name": "Focus Session",
-            "duration_minutes": 25,
+            "task_name": selectedPreset?.name ?? "Focus Session",
+            "duration_minutes": focusTime / 60,
             "date": DateFormatter.yyyyMMdd.string(from: Date())
         ]
         

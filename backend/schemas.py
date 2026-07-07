@@ -25,3 +25,20 @@ class StatsResponse(BaseModel):
     """日別統計情報を返すためのスキーマ。"""
     date: date
     total_duration_minutes: int
+
+class PresetCreate(BaseModel):
+    """新しいプリセットを作成するためのスキーマ。"""
+    name: str
+    focus_minutes: int
+    break_minutes: int
+
+class PresetResponse(BaseModel):
+    """APIレスポンスでプリセットを返すためのスキーマ。"""
+    id: int
+    name: str
+    focus_minutes: int
+    break_minutes: int
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
