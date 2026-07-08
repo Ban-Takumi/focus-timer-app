@@ -38,7 +38,7 @@ struct Provider: TimelineProvider {
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<Entry>) -> ()) {
         // テスト環境の場合は http://127.0.0.1:8000/stats/weekly に変更してください。
-        guard let url = URL(string: "http://127.0.0.1:8000/stats/weekly") else {
+        guard let url = URL(string: "https://focus-timer-app-6u58.onrender.com/stats/weekly") else {
             let entry = SimpleEntry(date: Date(), todayDuration: 0, weeklyStats: [])
             let timeline = Timeline(entries: [entry], policy: .after(Date().addingTimeInterval(15 * 60)))
             completion(timeline)
