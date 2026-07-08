@@ -4,6 +4,7 @@
 //
 
 import SwiftUI
+import Charts
 
 struct ContentView: View {
     @StateObject private var viewModel = TimerViewModel()
@@ -18,6 +19,11 @@ struct ContentView: View {
             SettingsView(viewModel: viewModel)
                 .tabItem {
                     Label("設定", systemImage: "gearshape")
+                }
+                
+            StatisticsView(viewModel: viewModel)
+                .tabItem {
+                    Label("統計", systemImage: "chart.bar")
                 }
         }
         // ウィンドウの最小サイズを指定（Mac用）
@@ -88,4 +94,69 @@ struct TimerView: View {
 
 #Preview {
     ContentView()
+}
+
+struct StatisticsView: View {
+    @ObservedObject var viewModel: TimerViewModel
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("今週の集中時間")
+                .font(.title2)
+                .bold()
+                .padding(.horizontal)
+            
+            if viewModel.weeklyStats.isEmpty {
+                Text("データがありません")
+                    .foregroundColor(.secondary)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                Chart(viewModel.weeklyStats, id: \.date) { stat in
+                    BarMark(
+                        x: .value("Day", formatDay(from: stat.date)),
+                        y: .value("Minutes", stat.total_duration_minutes)
+                    )
+                    .foregroundStyle(colorForDateString(stat.date))
+                    .cornerRadius(4)
+                }
+                .chartYAxis {
+                    AxisMarks(position: .leading)
+                }
+                .padding()
+            }
+        }
+        .padding(.vertical)
+        .onAppear {
+            viewModel.fetchWeeklyStats()
+        }
+    }
+    
+    // 日付文字列（YYYY-MM-DD）から曜日や日を取り出す補助メソッド
+    private func formatDay(from dateString: String) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        formatter.locale = Locale(identifier: "ja_JP")
+        guard let date = formatter.date(from: dateString) else { return dateString }
+        
+        let displayFormatter = DateFormatter()
+        displayFormatter.locale = Locale(identifier: "ja_JP")
+        displayFormatter.dateFormat = "E" // 例: 月, 火
+        return displayFormatter.string(from: date)
+    }
+    
+    // 曜日ごとに色を変える
+    private func colorForDateString(_ dateString: String) -> Color {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        guard let date = formatter.date(from: dateString) else { return .blue }
+        
+        let calendar = Calendar.current
+        let weekday = calendar.component(.weekday, from: date)
+        
+        switch weekday {
+        case 1: return .red // 日曜日
+        case 7: return .blue // 土曜日
+        default: return .orange // 平日
+        }
+    }
 }

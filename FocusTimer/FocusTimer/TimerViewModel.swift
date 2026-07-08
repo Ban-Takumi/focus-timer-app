@@ -14,12 +14,19 @@ struct TimerPreset: Identifiable, Codable, Hashable {
     var break_minutes: Int
 }
 
+struct DailyStat: Codable, Hashable {
+    let date: String
+    let total_duration_minutes: Int
+}
+
 class TimerViewModel: ObservableObject {
     @Published var mode: TimerMode = .focus
     @Published var timeRemaining: Int = 50 * 60
     @Published var isRunning: Bool = false
     
     @Published var presets: [TimerPreset] = []
+    @Published var weeklyStats: [DailyStat] = []
+    
     @Published var selectedPreset: TimerPreset? {
         didSet {
             if let preset = selectedPreset, !isRunning {
@@ -40,9 +47,9 @@ class TimerViewModel: ObservableObject {
     private var timer: AnyCancellable?
     
     // ベースURL: ローカルテスト用に 127.0.0.1 をデフォルトとする
-    // private let baseURL = "http://127.0.0.1:8000"
+    private let baseURL = "http://127.0.0.1:8000"
     // 本番（Render）に繋ぐ場合は以下のように変更
-    private let baseURL = "https://focus-timer-app-6u58.onrender.com"
+    // private let baseURL = "https://focus-timer-app-6u58.onrender.com"
     
     init() {
         fetchPresets()
@@ -202,6 +209,27 @@ class TimerViewModel: ObservableObject {
             // 通信成功後にウィジェットの表示を強制的に更新（リロード）する
             WidgetCenter.shared.reloadAllTimelines()
             
+        }.resume()
+    }
+    
+    // バックエンドから今週の統計を取得
+    func fetchWeeklyStats() {
+        guard let url = URL(string: "\(baseURL)/stats/weekly") else { return }
+        
+        URLSession.shared.dataTask(with: url) { [weak self] data, response, error in
+            if let error = error {
+                print("統計取得エラー: \(error)")
+                return
+            }
+            guard let data = data else { return }
+            do {
+                let decoded = try JSONDecoder().decode([DailyStat].self, from: data)
+                DispatchQueue.main.async {
+                    self?.weeklyStats = decoded
+                }
+            } catch {
+                print("統計デコードエラー: \(error)")
+            }
         }.resume()
     }
 }
