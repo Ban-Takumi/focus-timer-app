@@ -154,9 +154,14 @@ struct StatisticsView: View {
         let weekday = calendar.component(.weekday, from: date)
         
         switch weekday {
-        case 1: return .red // 日曜日
-        case 7: return .blue // 土曜日
-        default: return .orange // 平日
+        case 1: return .red      // 日
+        case 2: return .orange   // 月
+        case 3: return .yellow   // 火
+        case 4: return .green    // 水
+        case 5: return .cyan     // 木
+        case 6: return .blue     // 金
+        case 7: return .purple   // 土
+        default: return .orange
         }
     }
 }
