@@ -52,7 +52,17 @@ struct Provider: TimelineProvider {
             
             if let data = data, let decoded = try? JSONDecoder().decode([DailyStat].self, from: data) {
                 stats = decoded
-                todayDuration = decoded.last?.total_duration_minutes ?? 0
+                
+                // 今日の日付のデータを検索して取得
+                let formatter = DateFormatter()
+                formatter.dateFormat = "yyyy-MM-dd"
+                let todayString = formatter.string(from: Date())
+                
+                if let todayStat = stats.first(where: { $0.date == todayString }) {
+                    todayDuration = todayStat.total_duration_minutes
+                } else {
+                    todayDuration = 0
+                }
             }
             
             let entry = SimpleEntry(date: Date(), todayDuration: todayDuration, weeklyStats: stats)
