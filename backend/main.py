@@ -1,6 +1,6 @@
 from fastapi import FastAPI, Depends
 from sqlalchemy.orm import Session
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime
 from typing import List
 
 import models, schemas
@@ -143,6 +143,34 @@ def get_weekly_stats(db: Session = Depends(get_db)) -> List[schemas.StatsRespons
     ]
     
     return result
+
+@app.get(
+    "/stats/timeline",
+    response_model=List[schemas.RecordResponse],
+    summary="今日の詳細タイムラインデータの取得",
+    response_description="朝8時起点の24時間以内に記録されたセッションのリスト"
+)
+def get_today_timeline(db: Session = Depends(get_db)) -> List[schemas.RecordResponse]:
+    """
+    朝8:00を起点とした1日（8:00〜翌朝7:59）のセッション記録を返す。
+    タイムライングラフの描画に使用される。
+    """
+    now = datetime.now()
+    if now.hour < 8:
+        # 現在時刻が深夜0:00〜7:59の場合、前日の8:00から今日の7:59まで
+        start_time = now.replace(hour=8, minute=0, second=0, microsecond=0) - timedelta(days=1)
+    else:
+        # 現在時刻が朝8:00以降の場合、今日の8:00から翌日の7:59まで
+        start_time = now.replace(hour=8, minute=0, second=0, microsecond=0)
+    
+    end_time = start_time + timedelta(hours=24)
+    
+    records = db.query(models.PomodoroRecord).filter(
+        models.PomodoroRecord.created_at >= start_time,
+        models.PomodoroRecord.created_at < end_time
+    ).all()
+    
+    return records
 
 # -------------------------------------------------------------------
 # プリセット用エンドポイント

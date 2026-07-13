@@ -19,6 +19,24 @@ struct DailyStat: Codable, Hashable {
     let total_duration_minutes: Int
 }
 
+struct TimelineRecord: Codable, Hashable, Identifiable {
+    let id: Int
+    let task_name: String
+    let duration_minutes: Int
+    let date: String
+    let created_at: String
+    
+    var createdAtDate: Date {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        if let date = formatter.date(from: created_at) { return date }
+        
+        formatter.formatOptions = [.withInternetDateTime]
+        return formatter.date(from: created_at) ?? Date()
+    }
+}
+
+
 class TimerViewModel: ObservableObject {
     @Published var mode: TimerMode = .focus
     @Published var timeRemaining: Int = 50 * 60
@@ -26,6 +44,8 @@ class TimerViewModel: ObservableObject {
     
     @Published var presets: [TimerPreset] = []
     @Published var weeklyStats: [DailyStat] = []
+    @Published var todayTimeline: [TimelineRecord] = []
+
     
     @Published var selectedPreset: TimerPreset? {
         didSet {
@@ -46,10 +66,10 @@ class TimerViewModel: ObservableObject {
     
     private var timer: AnyCancellable?
     
-    // ベースURL: ローカルテスト用に 127.0.0.1 をデフォルトとする
-    // private let baseURL = "http://127.0.0.1:8000"
-    // 本番（Render）に繋ぐ場合は以下のように変更
+    // ベースURL: 本番（Render）環境
     private let baseURL = "https://focus-timer-app-6u58.onrender.com"
+    // ローカルテスト時は以下に切り替え
+    // private let baseURL = "http://127.0.0.1:8000"
     
     init() {
         fetchPresets()
@@ -229,6 +249,27 @@ class TimerViewModel: ObservableObject {
                 }
             } catch {
                 print("統計デコードエラー: \(error)")
+            }
+        }.resume()
+    }
+    
+    // バックエンドから今日のタイムライン統計を取得
+    func fetchTimeline() {
+        guard let url = URL(string: "\(baseURL)/stats/timeline") else { return }
+        
+        URLSession.shared.dataTask(with: url) { [weak self] data, response, error in
+            if let error = error {
+                print("タイムライン取得エラー: \(error)")
+                return
+            }
+            guard let data = data else { return }
+            do {
+                let decoded = try JSONDecoder().decode([TimelineRecord].self, from: data)
+                DispatchQueue.main.async {
+                    self?.todayTimeline = decoded
+                }
+            } catch {
+                print("タイムラインデコードエラー: \(error)")
             }
         }.resume()
     }
