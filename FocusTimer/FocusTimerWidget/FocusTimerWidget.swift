@@ -109,29 +109,20 @@ struct SmallWidgetView: View {
             let minutes = entry.todayDuration % 60
             
             HStack(alignment: .lastTextBaseline, spacing: 2) {
-                if hours > 0 {
-                    Text("\(hours)")
-                        .font(.system(size: 32, weight: .bold, design: .rounded))
-                        .foregroundColor(.orange)
-                    Text("時間")
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                    
-                    Text("\(minutes)")
-                        .font(.system(size: 32, weight: .bold, design: .rounded))
-                        .foregroundColor(.orange)
-                        .padding(.leading, 4)
-                    Text("分")
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                } else {
-                    Text("\(minutes)")
-                        .font(.system(size: 40, weight: .bold, design: .rounded))
-                        .foregroundColor(.orange)
-                    Text("分")
-                        .font(.headline)
-                        .foregroundColor(.secondary)
-                }
+                Text("\(hours)")
+                    .font(.system(size: 32, weight: .bold, design: .rounded))
+                    .foregroundColor(.orange)
+                Text("時間")
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+                
+                Text("\(minutes)")
+                    .font(.system(size: 32, weight: .bold, design: .rounded))
+                    .foregroundColor(.orange)
+                    .padding(.leading, 4)
+                Text("分")
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
