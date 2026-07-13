@@ -2,6 +2,7 @@ from fastapi import FastAPI, Depends
 from sqlalchemy.orm import Session
 from datetime import date, timedelta, datetime
 from typing import List
+from zoneinfo import ZoneInfo
 
 import models, schemas
 from database import engine, get_db, SessionLocal
@@ -95,7 +96,7 @@ def get_today_stats(db: Session = Depends(get_db)) -> schemas.StatsResponse:
     今日の日付に一致する記録を集計し、合計の集中時間（分）を計算して返す。
     ウィジェットでのデータ表示に使用される。
     """
-    today = date.today()
+    today = datetime.now(ZoneInfo("Asia/Tokyo")).date()
     
     # 今日の記録のみをフィルタリング
     records = db.query(models.PomodoroRecord).filter(models.PomodoroRecord.date == today).all()
@@ -116,7 +117,7 @@ def get_weekly_stats(db: Session = Depends(get_db)) -> List[schemas.StatsRespons
     今週（日曜日から土曜日）の記録を集計し、日ごとの合計集中時間（分）のリストを返す。
     ウィジェットのグラフ表示に使用される。
     """
-    today = date.today()
+    today = datetime.now(ZoneInfo("Asia/Tokyo")).date()
     # isoweekday()は月曜が1、日曜が7。日曜始まりにするため、日曜なら0日前、月曜なら1日前...戻る
     days_to_subtract = today.isoweekday() % 7
     start_date = today - timedelta(days=days_to_subtract)
@@ -155,7 +156,7 @@ def get_today_timeline(db: Session = Depends(get_db)) -> List[schemas.RecordResp
     朝8:00を起点とした1日（8:00〜翌朝7:59）のセッション記録を返す。
     タイムライングラフの描画に使用される。
     """
-    now = datetime.now()
+    now = datetime.now(ZoneInfo("Asia/Tokyo"))
     if now.hour < 8:
         # 現在時刻が深夜0:00〜7:59の場合、前日の8:00から今日の7:59まで
         start_time = now.replace(hour=8, minute=0, second=0, microsecond=0) - timedelta(days=1)
