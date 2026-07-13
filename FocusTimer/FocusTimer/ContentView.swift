@@ -7,7 +7,11 @@ import SwiftUI
 import Charts
 
 struct ContentView: View {
-    @StateObject private var viewModel = TimerViewModel()
+    @ObservedObject var viewModel: TimerViewModel
+    
+    init(viewModel: TimerViewModel = TimerViewModel()) {
+        self.viewModel = viewModel
+    }
     
     var body: some View {
         TabView {
@@ -56,6 +60,8 @@ struct TimerView: View {
             
             Text(timeString)
                 .font(.system(size: 80, weight: .medium, design: .monospaced))
+                .minimumScaleFactor(0.5)
+                .lineLimit(1)
                 .padding()
             
             HStack(spacing: 20) {
