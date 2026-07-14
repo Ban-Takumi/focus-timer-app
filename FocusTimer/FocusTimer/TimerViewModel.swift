@@ -2,6 +2,10 @@ import Foundation
 import Combine
 import WidgetKit
 
+extension Notification.Name {
+    static let timerDidFinish = Notification.Name("timerDidFinish")
+}
+
 enum TimerMode: String {
     case focus = "Focus Time"
     case breakTime = "Break Time"
@@ -109,6 +113,9 @@ class TimerViewModel: ObservableObject {
     // 0になったときの処理
     private func timerFinished() {
         stop()
+        
+        // タイマー終了の通知を発行
+        NotificationCenter.default.post(name: .timerDidFinish, object: nil)
         
         if mode == .focus {
             // 集中モード終了：記録を保存し、休憩モードへ移行

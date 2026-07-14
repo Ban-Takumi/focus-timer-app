@@ -38,6 +38,29 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             button.action = #selector(statusBarButtonClicked(sender:))
             button.sendAction(on: [.leftMouseUp, .rightMouseUp])
         }
+        
+        // タイマー終了通知の監視を登録
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleTimerFinished),
+            name: .timerDidFinish,
+            object: nil
+        )
+    }
+    
+    @objc func handleTimerFinished() {
+        // アプリを最前面にアクティブ化
+        NSApp.activate(ignoringOtherApps: true)
+        
+        // ポップオーバーが開いていなければ開く
+        if !popover.isShown, let button = statusItem.button {
+            popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+        }
+        
+        // メインウィンドウが開いている場合はそれも前に出す
+        if let mainWindow = mainWindow, mainWindow.isVisible {
+            mainWindow.makeKeyAndOrderFront(nil)
+        }
     }
 
     @objc func statusBarButtonClicked(sender: NSStatusBarButton) {
