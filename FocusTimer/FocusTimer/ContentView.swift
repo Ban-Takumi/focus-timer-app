@@ -37,6 +37,7 @@ struct ContentView: View {
 
 struct TimerView: View {
     @ObservedObject var viewModel: TimerViewModel
+    @StateObject private var reminderManager = ReminderManager()
     
     // 残り時間を "MM:SS" の形式にする
     var timeString: String {
@@ -57,6 +58,35 @@ struct TimerView: View {
                     .font(.subheadline)
                     .foregroundColor(.secondary)
             }
+            
+            HStack {
+                TextField("タスク名を入力...", text: $viewModel.currentTaskName)
+                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                    .disabled(viewModel.isRunning)
+                
+                Menu {
+                    if reminderManager.reminders.isEmpty {
+                        Text("未完了のタスクなし")
+                    } else {
+                        ForEach(reminderManager.reminders, id: \.calendarItemIdentifier) { reminder in
+                            Button(action: {
+                                viewModel.currentTaskName = reminder.title
+                            }) {
+                                Text(reminder.title)
+                            }
+                        }
+                    }
+                } label: {
+                    Image(systemName: "list.bullet.rectangle")
+                }
+                .menuStyle(BorderlessButtonMenuStyle())
+                .fixedSize()
+                .disabled(viewModel.isRunning)
+                .onAppear {
+                    reminderManager.fetchReminders()
+                }
+            }
+            .padding(.horizontal, 40)
             
             Text(timeString)
                 .font(.system(size: 80, weight: .medium, design: .monospaced))
