@@ -5,6 +5,7 @@
 
 import SwiftUI
 import Charts
+import EventKit
 
 struct ContentView: View {
     @ObservedObject var viewModel: TimerViewModel
