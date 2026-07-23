@@ -87,7 +87,7 @@ struct TimerView: View {
                     reminderManager.fetchReminders()
                 }
             }
-            .padding(.horizontal, 40)
+            .frame(maxWidth: 250)
             
             Text(timeString)
                 .font(.system(size: 80, weight: .medium, design: .monospaced))
