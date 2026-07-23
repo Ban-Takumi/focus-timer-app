@@ -97,11 +97,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // 既にウィンドウがあれば最前面に出すだけ
         if mainWindow == nil {
             let window = NSWindow(
-                contentRect: NSRect(x: 0, y: 0, width: 800, height: 600),
+                contentRect: NSRect(x: 0, y: 0, width: 550, height: 450),
                 styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView],
                 backing: .buffered, defer: false)
             window.center()
-            window.setFrameAutosaveName("Main Window")
+            window.setFrameAutosaveName("MainWindow_v2")
             // 同じViewModelを共有
             window.contentView = NSHostingView(rootView: ContentView(viewModel: sharedViewModel))
             window.title = "Focus Timer"
