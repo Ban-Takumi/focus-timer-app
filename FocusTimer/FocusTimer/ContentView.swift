@@ -244,7 +244,7 @@ struct DailyTimelineChartView: View {
                             xEnd: .value("End", end),
                             y: .value("Category", "集中時間")
                         )
-                        .foregroundStyle(.blue)
+                        .foregroundStyle(by: .value("Task", record.task_name))
                         .cornerRadius(4)
                     }
                 }
