@@ -39,6 +39,7 @@ struct ContentView: View {
 struct TimerView: View {
     @ObservedObject var viewModel: TimerViewModel
     @StateObject private var reminderManager = ReminderManager()
+    var isPopup: Bool = false
     
     // 残り時間を "MM:SS" の形式にする
     var timeString: String {
@@ -126,16 +127,17 @@ struct TimerView: View {
                     .buttonStyle(PlainButtonStyle())
                 }
                 
-                if viewModel.mode == .focus {
+                if !isPopup && viewModel.mode == .focus {
                     Button(action: {
                         viewModel.completeCurrentTaskAndContinue()
                     }) {
-                        Text("完了して次へ")
-                            .font(.title3)
-                            .frame(width: 150, height: 35)
-                            .background(Color.purple)
-                            .foregroundColor(.white)
-                            .cornerRadius(10)
+                        HStack(spacing: 4) {
+                            Image(systemName: "checkmark.circle.fill")
+                            Text("タスクを完了して次へ")
+                        }
+                        .font(.callout)
+                        .foregroundColor(.secondary)
+                        .padding(.top, 4)
                     }
                     .buttonStyle(PlainButtonStyle())
                 }

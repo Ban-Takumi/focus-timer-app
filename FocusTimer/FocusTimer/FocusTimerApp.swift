@@ -29,7 +29,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         popover = NSPopover()
         popover.contentSize = NSSize(width: 300, height: 400)
         popover.behavior = .transient
-        popover.contentViewController = NSHostingController(rootView: TimerView(viewModel: sharedViewModel))
+        popover.contentViewController = NSHostingController(rootView: TimerView(viewModel: sharedViewModel, isPopup: true))
 
         // メニューバーアイコンのセットアップ
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
