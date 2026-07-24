@@ -1,6 +1,7 @@
 import Foundation
 import Combine
 import WidgetKit
+import EventKit
 
 extension Notification.Name {
     static let timerDidFinish = Notification.Name("timerDidFinish")
@@ -44,7 +45,9 @@ struct TimelineRecord: Codable, Hashable, Identifiable {
 class TimerViewModel: ObservableObject {
     @Published var mode: TimerMode = .focus
     @Published var timeRemaining: Int = 50 * 60
+    @Published var lastSavedTimeRemaining: Int = 50 * 60
     @Published var isRunning: Bool = false
+    @Published var currentTaskName: String = ""
     
     @Published var presets: [TimerPreset] = []
     @Published var weeklyStats: [DailyStat] = []
@@ -58,6 +61,7 @@ class TimerViewModel: ObservableObject {
                 breakTime = preset.break_minutes * 60
                 if mode == .focus {
                     timeRemaining = focusTime
+                    lastSavedTimeRemaining = focusTime
                 } else {
                     timeRemaining = breakTime
                 }
@@ -108,6 +112,22 @@ class TimerViewModel: ObservableObject {
     func reset() {
         stop()
         timeRemaining = mode == .focus ? focusTime : breakTime
+        if mode == .focus {
+            lastSavedTimeRemaining = timeRemaining
+        }
+    }
+    
+    // 完了して次へ（経過時間を保存し、タイマーは止めずに継続）
+    func completeCurrentTaskAndContinue() {
+        guard mode == .focus else { return }
+        
+        let elapsed = lastSavedTimeRemaining - timeRemaining
+        if elapsed >= 60 {
+            saveRecord(elapsedSeconds: elapsed)
+        }
+        
+        lastSavedTimeRemaining = timeRemaining
+        currentTaskName = ""
     }
     
     // 0になったときの処理
@@ -119,13 +139,17 @@ class TimerViewModel: ObservableObject {
         
         if mode == .focus {
             // 集中モード終了：記録を保存し、休憩モードへ移行
-            saveRecord()
+            let elapsed = lastSavedTimeRemaining - timeRemaining
+            if elapsed >= 60 {
+                saveRecord(elapsedSeconds: elapsed)
+            }
             mode = .breakTime
             timeRemaining = breakTime
         } else {
             // 休憩モード終了：集中モードへ戻る（記録はしない）
             mode = .focus
             timeRemaining = focusTime
+            lastSavedTimeRemaining = focusTime
         }
     }
     
@@ -203,17 +227,19 @@ class TimerViewModel: ObservableObject {
     }
     
     // バックエンドへ記録を送信
-    private func saveRecord() {
+    private func saveRecord(elapsedSeconds: Int) {
         guard let url = URL(string: "\(baseURL)/records/") else { return }
         
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         
+        let durationMinutes = elapsedSeconds / 60
+        
         // 送信するデータ（スキーマに合わせて作成）
         let recordData: [String: Any] = [
-            "task_name": selectedPreset?.name ?? "Focus Session",
-            "duration_minutes": focusTime / 60,
+            "task_name": currentTaskName.isEmpty ? (selectedPreset?.name ?? "Focus Session") : currentTaskName,
+            "duration_minutes": durationMinutes,
             "date": DateFormatter.yyyyMMdd.string(from: Date())
         ]
         
@@ -289,4 +315,61 @@ extension DateFormatter {
         formatter.dateFormat = "yyyy-MM-dd"
         return formatter
     }()
+}
+
+// MARK: - Reminder Manager
+class ReminderManager: ObservableObject {
+    private let eventStore = EKEventStore()
+    
+    @Published var reminders: [EKReminder] = []
+    @Published var isAuthorized: Bool = false
+    
+    init() {
+        checkAccess()
+    }
+    
+    func checkAccess() {
+        let status = EKEventStore.authorizationStatus(for: .reminder)
+        switch status {
+        case .authorized:
+            isAuthorized = true
+            fetchReminders()
+        case .notDetermined:
+            requestAccess()
+        default:
+            isAuthorized = false
+        }
+    }
+    
+    func requestAccess() {
+        if #available(macOS 14.0, *) {
+            eventStore.requestFullAccessToReminders { [weak self] granted, error in
+                DispatchQueue.main.async {
+                    self?.isAuthorized = granted
+                    if granted {
+                        self?.fetchReminders()
+                    }
+                }
+            }
+        } else {
+            eventStore.requestAccess(to: .reminder) { [weak self] granted, error in
+                DispatchQueue.main.async {
+                    self?.isAuthorized = granted
+                    if granted {
+                        self?.fetchReminders()
+                    }
+                }
+            }
+        }
+    }
+    
+    func fetchReminders() {
+        guard isAuthorized else { return }
+        let predicate = eventStore.predicateForIncompleteReminders(withDueDateStarting: nil, ending: nil, calendars: nil)
+        eventStore.fetchReminders(matching: predicate) { [weak self] fetchedReminders in
+            DispatchQueue.main.async {
+                self?.reminders = fetchedReminders ?? []
+            }
+        }
+    }
 }

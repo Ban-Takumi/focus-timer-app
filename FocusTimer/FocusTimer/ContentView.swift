@@ -5,6 +5,7 @@
 
 import SwiftUI
 import Charts
+import EventKit
 
 struct ContentView: View {
     @ObservedObject var viewModel: TimerViewModel
@@ -37,6 +38,8 @@ struct ContentView: View {
 
 struct TimerView: View {
     @ObservedObject var viewModel: TimerViewModel
+    @StateObject private var reminderManager = ReminderManager()
+    var isPopup: Bool = false
     
     // 残り時間を "MM:SS" の形式にする
     var timeString: String {
@@ -58,40 +61,86 @@ struct TimerView: View {
                     .foregroundColor(.secondary)
             }
             
+            HStack {
+                TextField("タスク名を入力...", text: $viewModel.currentTaskName)
+                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                    .disabled(viewModel.isRunning)
+                
+                Menu {
+                    if reminderManager.reminders.isEmpty {
+                        Text("未完了のタスクなし")
+                    } else {
+                        ForEach(reminderManager.reminders, id: \.calendarItemIdentifier) { reminder in
+                            Button(action: {
+                                viewModel.currentTaskName = reminder.title
+                            }) {
+                                Text(reminder.title)
+                            }
+                        }
+                    }
+                } label: {
+                    Image(systemName: "list.bullet.rectangle")
+                }
+                .menuStyle(BorderlessButtonMenuStyle())
+                .fixedSize()
+                .disabled(viewModel.isRunning)
+                .onAppear {
+                    reminderManager.fetchReminders()
+                }
+            }
+            .frame(maxWidth: 250)
+            
             Text(timeString)
                 .font(.system(size: 80, weight: .medium, design: .monospaced))
                 .minimumScaleFactor(0.5)
                 .lineLimit(1)
                 .padding()
             
-            HStack(spacing: 20) {
-                Button(action: {
-                    if viewModel.isRunning {
-                        viewModel.stop()
-                    } else {
-                        viewModel.start()
+            VStack(spacing: 15) {
+                HStack(spacing: 20) {
+                    Button(action: {
+                        if viewModel.isRunning {
+                            viewModel.stop()
+                        } else {
+                            viewModel.start()
+                        }
+                    }) {
+                        Text(viewModel.isRunning ? "Pause" : "Start")
+                            .font(.title2)
+                            .frame(width: 100, height: 40)
+                            .background(viewModel.isRunning ? Color.orange : (viewModel.mode == .focus ? Color.green : Color.blue))
+                            .foregroundColor(.white)
+                            .cornerRadius(10)
                     }
-                }) {
-                    Text(viewModel.isRunning ? "Pause" : "Start")
-                        .font(.title2)
-                        .frame(width: 100, height: 40)
-                        .background(viewModel.isRunning ? Color.orange : (viewModel.mode == .focus ? Color.green : Color.blue))
-                        .foregroundColor(.white)
-                        .cornerRadius(10)
+                    .buttonStyle(PlainButtonStyle())
+                    
+                    Button(action: {
+                        viewModel.reset()
+                    }) {
+                        Text("Reset")
+                            .font(.title2)
+                            .frame(width: 100, height: 40)
+                            .background(Color.red)
+                            .foregroundColor(.white)
+                            .cornerRadius(10)
+                    }
+                    .buttonStyle(PlainButtonStyle())
                 }
-                .buttonStyle(PlainButtonStyle())
                 
-                Button(action: {
-                    viewModel.reset()
-                }) {
-                    Text("Reset")
-                        .font(.title2)
-                        .frame(width: 100, height: 40)
-                        .background(Color.red)
-                        .foregroundColor(.white)
-                        .cornerRadius(10)
+                if !isPopup && viewModel.mode == .focus {
+                    Button(action: {
+                        viewModel.completeCurrentTaskAndContinue()
+                    }) {
+                        HStack(spacing: 4) {
+                            Image(systemName: "checkmark.circle.fill")
+                            Text("タスクを完了して次へ")
+                        }
+                        .font(.callout)
+                        .foregroundColor(.secondary)
+                        .padding(.top, 4)
+                    }
+                    .buttonStyle(PlainButtonStyle())
                 }
-                .buttonStyle(PlainButtonStyle())
             }
         }
         .padding()
@@ -213,7 +262,7 @@ struct DailyTimelineChartView: View {
                             xEnd: .value("End", end),
                             y: .value("Category", "集中時間")
                         )
-                        .foregroundStyle(.blue)
+                        .foregroundStyle(by: .value("Task", record.task_name))
                         .cornerRadius(4)
                     }
                 }
