@@ -90,6 +90,8 @@ struct FocusTimerWidgetEntryView : View {
             SmallWidgetView(entry: entry)
         case .systemMedium, .systemLarge:
             WeeklyChartWidgetView(entry: entry)
+        case .systemExtraLarge:
+            ExtraLargeWidgetView(entry: entry)
         default:
             SmallWidgetView(entry: entry)
         }
@@ -195,6 +197,23 @@ struct WeeklyChartWidgetView: View {
     }
 }
 
+// Extra Large用のUI (左に今週のグラフ、右に今日の時間を配置)
+struct ExtraLargeWidgetView: View {
+    var entry: Provider.Entry
+    
+    var body: some View {
+        HStack(spacing: 24) {
+            WeeklyChartWidgetView(entry: entry)
+                .frame(maxWidth: .infinity)
+            
+            Divider()
+            
+            SmallWidgetView(entry: entry)
+                .frame(maxWidth: .infinity)
+        }
+    }
+}
+
 struct FocusTimerWidget: Widget {
     let kind: String = "FocusTimerWidget"
 
@@ -211,7 +230,7 @@ struct FocusTimerWidget: Widget {
         }
         .configurationDisplayName("Focus Timer")
         .description("今日の集中時間や今週の推移を表示します。")
-        .supportedFamilies([.systemSmall, .systemMedium, .systemLarge])
+        .supportedFamilies([.systemSmall, .systemMedium, .systemLarge, .systemExtraLarge])
     }
 }
 
