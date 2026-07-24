@@ -45,6 +45,7 @@ struct TimelineRecord: Codable, Hashable, Identifiable {
 class TimerViewModel: ObservableObject {
     @Published var mode: TimerMode = .focus
     @Published var timeRemaining: Int = 50 * 60
+    @Published var lastSavedTimeRemaining: Int = 50 * 60
     @Published var isRunning: Bool = false
     @Published var currentTaskName: String = ""
     
@@ -60,6 +61,7 @@ class TimerViewModel: ObservableObject {
                 breakTime = preset.break_minutes * 60
                 if mode == .focus {
                     timeRemaining = focusTime
+                    lastSavedTimeRemaining = focusTime
                 } else {
                     timeRemaining = breakTime
                 }
@@ -110,6 +112,22 @@ class TimerViewModel: ObservableObject {
     func reset() {
         stop()
         timeRemaining = mode == .focus ? focusTime : breakTime
+        if mode == .focus {
+            lastSavedTimeRemaining = timeRemaining
+        }
+    }
+    
+    // 完了して次へ（経過時間を保存し、タイマーは止めずに継続）
+    func completeCurrentTaskAndContinue() {
+        guard mode == .focus else { return }
+        
+        let elapsed = lastSavedTimeRemaining - timeRemaining
+        if elapsed >= 60 {
+            saveRecord(elapsedSeconds: elapsed)
+        }
+        
+        lastSavedTimeRemaining = timeRemaining
+        currentTaskName = ""
     }
     
     // 0になったときの処理
@@ -121,13 +139,17 @@ class TimerViewModel: ObservableObject {
         
         if mode == .focus {
             // 集中モード終了：記録を保存し、休憩モードへ移行
-            saveRecord()
+            let elapsed = lastSavedTimeRemaining - timeRemaining
+            if elapsed >= 60 {
+                saveRecord(elapsedSeconds: elapsed)
+            }
             mode = .breakTime
             timeRemaining = breakTime
         } else {
             // 休憩モード終了：集中モードへ戻る（記録はしない）
             mode = .focus
             timeRemaining = focusTime
+            lastSavedTimeRemaining = focusTime
         }
     }
     
@@ -205,17 +227,19 @@ class TimerViewModel: ObservableObject {
     }
     
     // バックエンドへ記録を送信
-    private func saveRecord() {
+    private func saveRecord(elapsedSeconds: Int) {
         guard let url = URL(string: "\(baseURL)/records/") else { return }
         
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         
+        let durationMinutes = elapsedSeconds / 60
+        
         // 送信するデータ（スキーマに合わせて作成）
         let recordData: [String: Any] = [
             "task_name": currentTaskName.isEmpty ? (selectedPreset?.name ?? "Focus Session") : currentTaskName,
-            "duration_minutes": focusTime / 60,
+            "duration_minutes": durationMinutes,
             "date": DateFormatter.yyyyMMdd.string(from: Date())
         ]
         

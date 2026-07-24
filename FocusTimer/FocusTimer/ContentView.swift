@@ -95,34 +95,50 @@ struct TimerView: View {
                 .lineLimit(1)
                 .padding()
             
-            HStack(spacing: 20) {
-                Button(action: {
-                    if viewModel.isRunning {
-                        viewModel.stop()
-                    } else {
-                        viewModel.start()
+            VStack(spacing: 15) {
+                HStack(spacing: 20) {
+                    Button(action: {
+                        if viewModel.isRunning {
+                            viewModel.stop()
+                        } else {
+                            viewModel.start()
+                        }
+                    }) {
+                        Text(viewModel.isRunning ? "Pause" : "Start")
+                            .font(.title2)
+                            .frame(width: 100, height: 40)
+                            .background(viewModel.isRunning ? Color.orange : (viewModel.mode == .focus ? Color.green : Color.blue))
+                            .foregroundColor(.white)
+                            .cornerRadius(10)
                     }
-                }) {
-                    Text(viewModel.isRunning ? "Pause" : "Start")
-                        .font(.title2)
-                        .frame(width: 100, height: 40)
-                        .background(viewModel.isRunning ? Color.orange : (viewModel.mode == .focus ? Color.green : Color.blue))
-                        .foregroundColor(.white)
-                        .cornerRadius(10)
+                    .buttonStyle(PlainButtonStyle())
+                    
+                    Button(action: {
+                        viewModel.reset()
+                    }) {
+                        Text("Reset")
+                            .font(.title2)
+                            .frame(width: 100, height: 40)
+                            .background(Color.red)
+                            .foregroundColor(.white)
+                            .cornerRadius(10)
+                    }
+                    .buttonStyle(PlainButtonStyle())
                 }
-                .buttonStyle(PlainButtonStyle())
                 
-                Button(action: {
-                    viewModel.reset()
-                }) {
-                    Text("Reset")
-                        .font(.title2)
-                        .frame(width: 100, height: 40)
-                        .background(Color.red)
-                        .foregroundColor(.white)
-                        .cornerRadius(10)
+                if viewModel.mode == .focus {
+                    Button(action: {
+                        viewModel.completeCurrentTaskAndContinue()
+                    }) {
+                        Text("完了して次へ")
+                            .font(.title3)
+                            .frame(width: 150, height: 35)
+                            .background(Color.purple)
+                            .foregroundColor(.white)
+                            .cornerRadius(10)
+                    }
+                    .buttonStyle(PlainButtonStyle())
                 }
-                .buttonStyle(PlainButtonStyle())
             }
         }
         .padding()
