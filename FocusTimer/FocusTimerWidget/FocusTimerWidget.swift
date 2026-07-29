@@ -257,3 +257,61 @@ struct FocusTimerWidget: Widget {
         DailyStat(date: "2026-07-11", total_duration_minutes: 125)
     ])
 }
+
+// ----------------------------------------------------
+// ゴール専用ウィジェット (達成度を % で表示)
+// ----------------------------------------------------
+
+struct GoalWidgetView: View {
+    var entry: Provider.Entry
+    @AppStorage("dailyFocusGoalMinutes", store: UserDefaults(suiteName: "group.com.bantakumi.FocusTimer")) var dailyFocusGoalMinutes: Int = 120
+    
+    var body: some View {
+        ZStack {
+            let percentage = (CGFloat(entry.todayDuration) / CGFloat(max(1, dailyFocusGoalMinutes))) * 100
+            let progress = min(percentage / 100, 1.0)
+            
+            Circle()
+                .stroke(lineWidth: 12)
+                .opacity(0.2)
+                .foregroundColor(.orange)
+            
+            Circle()
+                .trim(from: 0.0, to: progress)
+                .stroke(style: StrokeStyle(lineWidth: 12, lineCap: .round, lineJoin: .round))
+                .foregroundColor(.orange)
+                .rotationEffect(Angle(degrees: 270.0))
+            
+            VStack(spacing: 4) {
+                Text("今日の達成度")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                
+                Text("\(Int(percentage))%")
+                    .font(.system(size: 28, weight: .bold, design: .rounded))
+                    .foregroundColor(.orange)
+            }
+        }
+        .padding(12)
+    }
+}
+
+struct FocusGoalWidget: Widget {
+    let kind: String = "FocusGoalWidget"
+
+    var body: some WidgetConfiguration {
+        StaticConfiguration(kind: kind, provider: Provider()) { entry in
+            if #available(macOS 14.0, iOS 17.0, *) {
+                GoalWidgetView(entry: entry)
+                    .containerBackground(.fill.tertiary, for: .widget)
+            } else {
+                GoalWidgetView(entry: entry)
+                    .padding()
+                    .background()
+            }
+        }
+        .configurationDisplayName("Focus Goal")
+        .description("今日の目標達成度をパーセントで表示します。")
+        .supportedFamilies([.systemSmall])
+    }
+}

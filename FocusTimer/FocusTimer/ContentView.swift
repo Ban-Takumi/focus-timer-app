@@ -92,7 +92,7 @@ struct TimerView: View {
             
             ZStack {
                 Circle()
-                    .stroke(lineWidth: 12)
+                    .stroke(lineWidth: 13)
                     .opacity(0.2)
                     .foregroundColor(viewModel.mode == .focus ? .blue : .green)
                 
@@ -100,17 +100,17 @@ struct TimerView: View {
                 
                 Circle()
                     .trim(from: 0.0, to: progress)
-                    .stroke(style: StrokeStyle(lineWidth: 12, lineCap: .round, lineJoin: .round))
+                    .stroke(style: StrokeStyle(lineWidth: 13, lineCap: .round, lineJoin: .round))
                     .foregroundColor(viewModel.mode == .focus ? .blue : .green)
                     .rotationEffect(Angle(degrees: 270.0))
                     .animation(.easeInOut(duration: 1.0), value: viewModel.todayTotalMinutes)
                 
                 Text(timeString)
-                    .font(.system(size: 70, weight: .medium, design: .monospaced))
+                    .font(.system(size: 75, weight: .medium, design: .monospaced))
                     .minimumScaleFactor(0.5)
                     .lineLimit(1)
             }
-            .frame(width: 220, height: 220)
+            .frame(width: 250, height: 250)
             .padding()
             
             VStack(spacing: 15) {
