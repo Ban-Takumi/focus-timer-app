@@ -12,5 +12,6 @@ import SwiftUI
 struct FocusTimerWidgetBundle: WidgetBundle {
     var body: some Widget {
         FocusTimerWidget()
+        FocusGoalWidget()
     }
 }

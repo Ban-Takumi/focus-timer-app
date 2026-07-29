@@ -2,6 +2,7 @@ import Foundation
 import Combine
 import WidgetKit
 import EventKit
+import SwiftUI
 
 extension Notification.Name {
     static let timerDidFinish = Notification.Name("timerDidFinish")
@@ -52,6 +53,9 @@ class TimerViewModel: ObservableObject {
     @Published var presets: [TimerPreset] = []
     @Published var weeklyStats: [DailyStat] = []
     @Published var todayTimeline: [TimelineRecord] = []
+    
+    @AppStorage("dailyFocusGoalMinutes", store: UserDefaults(suiteName: "group.com.bantakumi.FocusTimer")) var dailyFocusGoalMinutes: Int = 120
+    @Published var todayTotalMinutes: Int = 0
 
     
     @Published var selectedPreset: TimerPreset? {
@@ -279,6 +283,16 @@ class TimerViewModel: ObservableObject {
                 let decoded = try JSONDecoder().decode([DailyStat].self, from: data)
                 DispatchQueue.main.async {
                     self?.weeklyStats = decoded
+                    
+                    // 今日の合計集中時間を計算
+                    let formatter = DateFormatter()
+                    formatter.dateFormat = "yyyy-MM-dd"
+                    let todayString = formatter.string(from: Date())
+                    if let todayStat = decoded.first(where: { $0.date == todayString }) {
+                        self?.todayTotalMinutes = todayStat.total_duration_minutes
+                    } else {
+                        self?.todayTotalMinutes = 0
+                    }
                 }
             } catch {
                 print("統計デコードエラー: \(error)")

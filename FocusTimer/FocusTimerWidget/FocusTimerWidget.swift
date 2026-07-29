@@ -90,6 +90,8 @@ struct FocusTimerWidgetEntryView : View {
             SmallWidgetView(entry: entry)
         case .systemMedium, .systemLarge:
             WeeklyChartWidgetView(entry: entry)
+        case .systemExtraLarge:
+            ExtraLargeWidgetView(entry: entry)
         default:
             SmallWidgetView(entry: entry)
         }
@@ -99,33 +101,43 @@ struct FocusTimerWidgetEntryView : View {
 // 従来のSmallサイズのウィジェットUI
 struct SmallWidgetView: View {
     var entry: Provider.Entry
+    @AppStorage("dailyFocusGoalMinutes", store: UserDefaults(suiteName: "group.com.bantakumi.FocusTimer")) var dailyFocusGoalMinutes: Int = 120
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("今日の集中時間")
-                .font(.subheadline)
-                .foregroundColor(.secondary)
-            let hours = entry.todayDuration / 60
-            let minutes = entry.todayDuration % 60
+        ZStack {
+            let progress = min(CGFloat(entry.todayDuration) / CGFloat(max(1, dailyFocusGoalMinutes)), 1.0)
             
-            HStack(alignment: .lastTextBaseline, spacing: 2) {
-                Text("\(hours)")
-                    .font(.system(size: 32, weight: .bold, design: .rounded))
-                    .foregroundColor(.orange)
-                Text("時間")
-                    .font(.subheadline)
+            Circle()
+                .stroke(lineWidth: 12)
+                .opacity(0.2)
+                .foregroundColor(.orange)
+            
+            Circle()
+                .trim(from: 0.0, to: progress)
+                .stroke(style: StrokeStyle(lineWidth: 12, lineCap: .round, lineJoin: .round))
+                .foregroundColor(.orange)
+                .rotationEffect(Angle(degrees: 270.0))
+            
+            VStack(spacing: 4) {
+                Text("今日の集中")
+                    .font(.caption)
                     .foregroundColor(.secondary)
                 
-                Text("\(minutes)")
-                    .font(.system(size: 32, weight: .bold, design: .rounded))
-                    .foregroundColor(.orange)
-                    .padding(.leading, 4)
-                Text("分")
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
+                let hours = entry.todayDuration / 60
+                let minutes = entry.todayDuration % 60
+                
+                if hours > 0 {
+                    Text("\(hours)h \(minutes)m")
+                        .font(.system(size: 18, weight: .bold, design: .rounded))
+                        .foregroundColor(.orange)
+                } else {
+                    Text("\(minutes)m")
+                        .font(.system(size: 22, weight: .bold, design: .rounded))
+                        .foregroundColor(.orange)
+                }
             }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+        .padding(12)
     }
 }
 
@@ -195,6 +207,23 @@ struct WeeklyChartWidgetView: View {
     }
 }
 
+// Extra Large用のUI (左に今週のグラフ、右に今日の時間を配置)
+struct ExtraLargeWidgetView: View {
+    var entry: Provider.Entry
+    
+    var body: some View {
+        HStack(spacing: 24) {
+            WeeklyChartWidgetView(entry: entry)
+                .frame(maxWidth: .infinity)
+            
+            Divider()
+            
+            SmallWidgetView(entry: entry)
+                .frame(maxWidth: .infinity)
+        }
+    }
+}
+
 struct FocusTimerWidget: Widget {
     let kind: String = "FocusTimerWidget"
 
@@ -211,7 +240,7 @@ struct FocusTimerWidget: Widget {
         }
         .configurationDisplayName("Focus Timer")
         .description("今日の集中時間や今週の推移を表示します。")
-        .supportedFamilies([.systemSmall, .systemMedium, .systemLarge])
+        .supportedFamilies([.systemSmall, .systemMedium, .systemLarge, .systemExtraLarge])
     }
 }
 
@@ -227,4 +256,62 @@ struct FocusTimerWidget: Widget {
         DailyStat(date: "2026-07-10", total_duration_minutes: 25),
         DailyStat(date: "2026-07-11", total_duration_minutes: 125)
     ])
+}
+
+// ----------------------------------------------------
+// ゴール専用ウィジェット (達成度を % で表示)
+// ----------------------------------------------------
+
+struct GoalWidgetView: View {
+    var entry: Provider.Entry
+    @AppStorage("dailyFocusGoalMinutes", store: UserDefaults(suiteName: "group.com.bantakumi.FocusTimer")) var dailyFocusGoalMinutes: Int = 120
+    
+    var body: some View {
+        ZStack {
+            let percentage = (CGFloat(entry.todayDuration) / CGFloat(max(1, dailyFocusGoalMinutes))) * 100
+            let progress = min(percentage / 100, 1.0)
+            
+            Circle()
+                .stroke(lineWidth: 12)
+                .opacity(0.2)
+                .foregroundColor(.orange)
+            
+            Circle()
+                .trim(from: 0.0, to: progress)
+                .stroke(style: StrokeStyle(lineWidth: 12, lineCap: .round, lineJoin: .round))
+                .foregroundColor(.orange)
+                .rotationEffect(Angle(degrees: 270.0))
+            
+            VStack(spacing: 4) {
+                Text("今日の達成度")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                
+                Text("\(Int(percentage))%")
+                    .font(.system(size: 28, weight: .bold, design: .rounded))
+                    .foregroundColor(.orange)
+            }
+        }
+        .padding(12)
+    }
+}
+
+struct FocusGoalWidget: Widget {
+    let kind: String = "FocusGoalWidget"
+
+    var body: some WidgetConfiguration {
+        StaticConfiguration(kind: kind, provider: Provider()) { entry in
+            if #available(macOS 14.0, iOS 17.0, *) {
+                GoalWidgetView(entry: entry)
+                    .containerBackground(.fill.tertiary, for: .widget)
+            } else {
+                GoalWidgetView(entry: entry)
+                    .padding()
+                    .background()
+            }
+        }
+        .configurationDisplayName("Focus Goal")
+        .description("今日の目標達成度をパーセントで表示します。")
+        .supportedFamilies([.systemSmall])
+    }
 }

@@ -90,11 +90,28 @@ struct TimerView: View {
             }
             .frame(maxWidth: 250)
             
-            Text(timeString)
-                .font(.system(size: 80, weight: .medium, design: .monospaced))
-                .minimumScaleFactor(0.5)
-                .lineLimit(1)
-                .padding()
+            ZStack {
+                Circle()
+                    .stroke(lineWidth: 13)
+                    .opacity(0.2)
+                    .foregroundColor(viewModel.mode == .focus ? .blue : .green)
+                
+                let progress = min(CGFloat(viewModel.todayTotalMinutes) / CGFloat(max(1, viewModel.dailyFocusGoalMinutes)), 1.0)
+                
+                Circle()
+                    .trim(from: 0.0, to: progress)
+                    .stroke(style: StrokeStyle(lineWidth: 13, lineCap: .round, lineJoin: .round))
+                    .foregroundColor(viewModel.mode == .focus ? .blue : .green)
+                    .rotationEffect(Angle(degrees: 270.0))
+                    .animation(.easeInOut(duration: 1.0), value: viewModel.todayTotalMinutes)
+                
+                Text(timeString)
+                    .font(.system(size: 75, weight: .medium, design: .monospaced))
+                    .minimumScaleFactor(0.5)
+                    .lineLimit(1)
+            }
+            .frame(width: 250, height: 250)
+            .padding()
             
             VStack(spacing: 15) {
                 HStack(spacing: 20) {

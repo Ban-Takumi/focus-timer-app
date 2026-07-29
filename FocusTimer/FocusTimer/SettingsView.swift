@@ -7,6 +7,16 @@ struct SettingsView: View {
     
     var body: some View {
         Form {
+            Section(header: Text("1日の集中目標").font(.headline)) {
+                HStack {
+                    Text("目標時間: \(viewModel.dailyFocusGoalMinutes)分")
+                    Spacer()
+                    Stepper("", value: $viewModel.dailyFocusGoalMinutes, in: 10...1440, step: 10)
+                        .labelsHidden()
+                }
+                .padding(.vertical, 4)
+            }
+            
             Section(header: Text("プリセットを選択").font(.headline)) {
                 ForEach(viewModel.presets) { preset in
                     HStack {
