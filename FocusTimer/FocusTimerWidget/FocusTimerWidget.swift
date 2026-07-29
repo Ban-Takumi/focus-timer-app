@@ -101,43 +101,36 @@ struct FocusTimerWidgetEntryView : View {
 // 従来のSmallサイズのウィジェットUI
 struct SmallWidgetView: View {
     var entry: Provider.Entry
-    @AppStorage("dailyFocusGoalMinutes", store: UserDefaults(suiteName: "group.com.bantakumi.FocusTimer")) var dailyFocusGoalMinutes: Int = 120
     
     var body: some View {
-        ZStack {
-            let progress = min(CGFloat(entry.todayDuration) / CGFloat(max(1, dailyFocusGoalMinutes)), 1.0)
+        VStack(alignment: .leading, spacing: 8) {
+            Text("今日の集中時間")
+                .font(.subheadline)
+                .foregroundColor(.secondary)
             
-            Circle()
-                .stroke(lineWidth: 12)
-                .opacity(0.2)
-                .foregroundColor(.orange)
-            
-            Circle()
-                .trim(from: 0.0, to: progress)
-                .stroke(style: StrokeStyle(lineWidth: 12, lineCap: .round, lineJoin: .round))
-                .foregroundColor(.orange)
-                .rotationEffect(Angle(degrees: 270.0))
-            
-            VStack(spacing: 4) {
-                Text("今日の集中")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-                
+            HStack(alignment: .lastTextBaseline, spacing: 2) {
                 let hours = entry.todayDuration / 60
                 let minutes = entry.todayDuration % 60
                 
                 if hours > 0 {
-                    Text("\(hours)h \(minutes)m")
-                        .font(.system(size: 18, weight: .bold, design: .rounded))
+                    Text("\(hours)")
+                        .font(.system(size: 32, weight: .bold, design: .rounded))
                         .foregroundColor(.orange)
-                } else {
-                    Text("\(minutes)m")
-                        .font(.system(size: 22, weight: .bold, design: .rounded))
-                        .foregroundColor(.orange)
+                    Text("時間")
+                        .font(.headline)
+                        .foregroundColor(.secondary)
+                        .padding(.trailing, 2)
                 }
+                
+                Text("\(minutes)")
+                    .font(.system(size: 32, weight: .bold, design: .rounded))
+                    .foregroundColor(.orange)
+                Text("分")
+                    .font(.headline)
+                    .foregroundColor(.secondary)
             }
         }
-        .padding(12)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
     }
 }
 
