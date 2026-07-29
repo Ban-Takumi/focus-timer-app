@@ -112,15 +112,13 @@ struct SmallWidgetView: View {
                 let hours = entry.todayDuration / 60
                 let minutes = entry.todayDuration % 60
                 
-                if hours > 0 {
-                    Text("\(hours)")
-                        .font(.system(size: 32, weight: .bold, design: .rounded))
-                        .foregroundColor(.orange)
-                    Text("時間")
-                        .font(.headline)
-                        .foregroundColor(.secondary)
-                        .padding(.trailing, 2)
-                }
+                Text("\(hours)")
+                    .font(.system(size: 32, weight: .bold, design: .rounded))
+                    .foregroundColor(.orange)
+                Text("時間")
+                    .font(.headline)
+                    .foregroundColor(.secondary)
+                    .padding(.trailing, 2)
                 
                 Text("\(minutes)")
                     .font(.system(size: 32, weight: .bold, design: .rounded))
