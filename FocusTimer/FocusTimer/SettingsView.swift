@@ -6,7 +6,7 @@ struct SettingsView: View {
     @State private var isShowingAddAlert = false
     
     var body: some View {
-        Form {
+        List {
             Section(header: Text("1日の集中目標").font(.headline)) {
                 HStack {
                     Text("目標時間: \(viewModel.dailyFocusGoalMinutes)分")
@@ -32,23 +32,19 @@ struct SettingsView: View {
                             Image(systemName: "checkmark")
                                 .foregroundColor(.blue)
                         }
-                        
-                        // 明示的な削除ボタン
-                        Button(action: {
-                            if let id = preset.id {
-                                viewModel.deletePreset(id: id)
-                            }
-                        }) {
-                            Image(systemName: "trash")
-                                .foregroundColor(.red.opacity(0.7))
-                        }
-                        .buttonStyle(PlainButtonStyle())
-                        .padding(.leading, 8)
-                        .help("このプリセットを削除")
                     }
                     .contentShape(Rectangle())
                     .onTapGesture {
                         viewModel.selectedPreset = preset
+                    }
+                    .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                        Button(role: .destructive) {
+                            if let id = preset.id {
+                                viewModel.deletePreset(id: id)
+                            }
+                        } label: {
+                            Label("削除", systemImage: "trash")
+                        }
                     }
                     .contextMenu {
                         Button(role: .destructive, action: {
@@ -77,7 +73,6 @@ struct SettingsView: View {
                 .padding(.vertical, 4)
             }
         }
-        .formStyle(.grouped)
         .padding()
         .sheet(isPresented: $isShowingAddAlert) {
             AddPresetView(viewModel: viewModel, isPresented: $isShowingAddAlert)
