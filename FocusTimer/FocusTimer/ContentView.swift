@@ -96,7 +96,8 @@ struct TimerView: View {
                     .opacity(0.2)
                     .foregroundColor(viewModel.mode == .focus ? .blue : .green)
                 
-                let progress = min(CGFloat(viewModel.todayTotalMinutes) / CGFloat(max(1, viewModel.dailyFocusGoalMinutes)), 1.0)
+                let totalTime = viewModel.mode == .focus ? viewModel.focusTime : viewModel.breakTime
+                let progress = totalTime > 0 ? CGFloat(viewModel.timeRemaining) / CGFloat(totalTime) : 0.0
                 
                 Circle()
                     .trim(from: 0.0, to: progress)
