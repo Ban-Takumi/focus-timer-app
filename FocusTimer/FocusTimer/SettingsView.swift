@@ -6,7 +6,7 @@ struct SettingsView: View {
     @State private var isShowingAddAlert = false
     
     var body: some View {
-        List {
+        Form {
             Section(header: Text("1日の集中目標").font(.headline)) {
                 HStack {
                     Text("目標時間: \(viewModel.dailyFocusGoalMinutes)分")
@@ -38,21 +38,25 @@ struct SettingsView: View {
                         viewModel.selectedPreset = preset
                     }
                     .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                        Button(role: .destructive) {
-                            if let id = preset.id {
-                                viewModel.deletePreset(id: id)
+                        if !["学習", "ポモドーロ", "ショート"].contains(preset.name) {
+                            Button(role: .destructive) {
+                                if let id = preset.id {
+                                    viewModel.deletePreset(id: id)
+                                }
+                            } label: {
+                                Label("削除", systemImage: "trash")
                             }
-                        } label: {
-                            Label("削除", systemImage: "trash")
                         }
                     }
                     .contextMenu {
-                        Button(role: .destructive, action: {
-                            if let id = preset.id {
-                                viewModel.deletePreset(id: id)
+                        if !["学習", "ポモドーロ", "ショート"].contains(preset.name) {
+                            Button(role: .destructive, action: {
+                                if let id = preset.id {
+                                    viewModel.deletePreset(id: id)
+                                }
+                            }) {
+                                Label("削除", systemImage: "trash")
                             }
-                        }) {
-                            Label("削除", systemImage: "trash")
                         }
                     }
                     .padding(.vertical, 4)
@@ -73,6 +77,7 @@ struct SettingsView: View {
                 .padding(.vertical, 4)
             }
         }
+        .formStyle(.grouped)
         .padding()
         .sheet(isPresented: $isShowingAddAlert) {
             AddPresetView(viewModel: viewModel, isPresented: $isShowingAddAlert)
