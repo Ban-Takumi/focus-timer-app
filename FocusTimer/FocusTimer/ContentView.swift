@@ -100,11 +100,11 @@ struct TimerView: View {
                 let progress = totalTime > 0 ? CGFloat(viewModel.timeRemaining) / CGFloat(totalTime) : 0.0
                 
                 Circle()
-                    .trim(from: 0.0, to: progress)
+                    .trim(from: 1.0 - progress, to: 1.0)
                     .stroke(style: StrokeStyle(lineWidth: 13, lineCap: .round, lineJoin: .round))
-                    .foregroundColor(viewModel.mode == .focus ? .blue : .green)
+                    .foregroundColor(viewModel.mode == .focus ? .blue.opacity(0.7) : .green.opacity(0.7))
                     .rotationEffect(Angle(degrees: 270.0))
-                    .animation(.easeInOut(duration: 1.0), value: viewModel.todayTotalMinutes)
+                    .animation(.linear(duration: 1.0), value: viewModel.timeRemaining)
                 
                 Text(timeString)
                     .font(.system(size: 75, weight: .medium, design: .monospaced))
