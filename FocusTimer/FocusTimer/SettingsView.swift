@@ -1,4 +1,5 @@
 import SwiftUI
+import WidgetKit
 
 struct SettingsView: View {
     @ObservedObject var viewModel: TimerViewModel
@@ -13,6 +14,9 @@ struct SettingsView: View {
                     Spacer()
                     Stepper("", value: $viewModel.dailyFocusGoalMinutes, in: 10...1440, step: 10)
                         .labelsHidden()
+                        .onChange(of: viewModel.dailyFocusGoalMinutes) { _ in
+                            WidgetCenter.shared.reloadAllTimelines()
+                        }
                 }
                 .padding(.vertical, 4)
             }
