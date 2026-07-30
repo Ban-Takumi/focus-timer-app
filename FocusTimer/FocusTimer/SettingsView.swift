@@ -20,11 +20,11 @@ struct SettingsView: View {
             Section(header: Text("プリセットを選択").font(.headline)) {
                 ForEach(viewModel.presets) { preset in
                     HStack {
-                        VStack(alignment: .leading, spacing: 4) {
+                        VStack(alignment: .leading) {
                             Text(preset.name)
                                 .font(.headline)
                             Text("集中: \(preset.focus_minutes)分 / 休憩: \(preset.break_minutes)分")
-                                .font(.subheadline)
+                                .font(.caption)
                                 .foregroundColor(.secondary)
                         }
                         Spacer()
@@ -32,14 +32,35 @@ struct SettingsView: View {
                             Image(systemName: "checkmark")
                                 .foregroundColor(.blue)
                         }
+                        
+                        // 明示的な削除ボタン
+                        Button(action: {
+                            if let id = preset.id {
+                                viewModel.deletePreset(id: id)
+                            }
+                        }) {
+                            Image(systemName: "trash")
+                                .foregroundColor(.red.opacity(0.7))
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                        .padding(.leading, 8)
+                        .help("このプリセットを削除")
                     }
                     .contentShape(Rectangle())
                     .onTapGesture {
                         viewModel.selectedPreset = preset
                     }
+                    .contextMenu {
+                        Button(role: .destructive, action: {
+                            if let id = preset.id {
+                                viewModel.deletePreset(id: id)
+                            }
+                        }) {
+                            Label("削除", systemImage: "trash")
+                        }
+                    }
                     .padding(.vertical, 4)
                 }
-                .onDelete(perform: deletePresets)
             }
             
             Section(header: Text("新しいプリセットを追加").font(.headline).padding(.top, 10)) {
