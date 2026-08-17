@@ -4,6 +4,8 @@
 ![Swift](https://img.shields.io/badge/Swift-FA7343?style=for-the-badge&logo=swift&logoColor=white)
 ![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white)
+![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)
+![Render](https://img.shields.io/badge/Render-000000?style=for-the-badge&logo=render&logoColor=white)
 
 **Macのメニューバーに常駐し、あなたの集中を可視化するポモドーロ・トラッカー**
 
@@ -53,11 +55,12 @@ FocusTimerは、作業への没入をサポートし、日々の積み重ねを�
 *   **データ共有**: `App Groups` (`UserDefaults`) を用いたメインアプリとウィジェット拡張間のセキュアなデータ同期
 *   **UI/UX**: `SwiftUI Charts` を用いた高度なグラフ描画、`MenuBarExtra` を用いた常駐アプリ化、`NotificationCenter` を用いた状態監視とウィンドウ制御
 
-### Backend (API & Database)
+### Backend & Infrastructure
 *   **言語**: Python 3.x
 *   **フレームワーク**: FastAPI
 *   **データベース**: PostgreSQL (Supabase)
 *   **ORM**: SQLAlchemy
+*   **インフラ・ホスティング**: Render
 
 
 
