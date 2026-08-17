@@ -56,7 +56,7 @@ FocusTimerは、作業への没入をサポートし、日々の積み重ねを�
 ### Backend (API & Database)
 *   **言語**: Python 3.x
 *   **フレームワーク**: FastAPI
-*   **データベース**: SQLite (ローカル環境) / PostgreSQL (本番想定)
+*   **データベース**: PostgreSQL (Supabase)
 *   **ORM**: SQLAlchemy
 
 
