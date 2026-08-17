@@ -1,9 +1,9 @@
 import SwiftUI
 import WidgetKit
 
+/// 設定画面コンポーネント
 struct SettingsView: View {
     @ObservedObject var viewModel: TimerViewModel
-    
     @State private var isShowingAddAlert = false
     
     var body: some View {
@@ -42,7 +42,7 @@ struct SettingsView: View {
                         viewModel.selectedPreset = preset
                     }
                     .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                        if !["学習", "ポモドーロ", "ショート"].contains(preset.name) {
+                        if !isDefaultPreset(preset.name) {
                             Button(role: .destructive) {
                                 if let id = preset.id {
                                     viewModel.deletePreset(id: id)
@@ -53,7 +53,7 @@ struct SettingsView: View {
                         }
                     }
                     .contextMenu {
-                        if !["学習", "ポモドーロ", "ショート"].contains(preset.name) {
+                        if !isDefaultPreset(preset.name) {
                             Button(role: .destructive, action: {
                                 if let id = preset.id {
                                     viewModel.deletePreset(id: id)
@@ -88,62 +88,7 @@ struct SettingsView: View {
         }
     }
     
-    private func deletePresets(offsets: IndexSet) {
-        for index in offsets {
-            let preset = viewModel.presets[index]
-            if let id = preset.id {
-                viewModel.deletePreset(id: id)
-            }
-        }
-    }
-}
-
-struct AddPresetView: View {
-    @ObservedObject var viewModel: TimerViewModel
-    @Binding var isPresented: Bool
-    
-    @State private var name = ""
-    @State private var focusMinutes = 25
-    @State private var breakMinutes = 5
-    
-    var body: some View {
-        VStack(spacing: 0) {
-            Form {
-                Section(header: Text("プリセット名")) {
-                    TextField("例: 読書", text: $name)
-                }
-                
-                Section(header: Text("時間設定 (分)")) {
-                    HStack {
-                        Spacer()
-                        VStack(alignment: .trailing, spacing: 12) {
-                            Stepper("集中時間: \(focusMinutes)分", value: $focusMinutes, in: 1...120)
-                            Stepper("休憩時間: \(breakMinutes)分", value: $breakMinutes, in: 1...60)
-                        }
-                        Spacer()
-                    }
-                    .padding(.vertical, 8)
-                }
-            }
-            .padding()
-            
-            HStack {
-                Spacer()
-                Button("キャンセル") {
-                    isPresented = false
-                }
-                Button("保存") {
-                    if !name.isEmpty {
-                        viewModel.createPreset(name: name, focusMinutes: focusMinutes, breakMinutes: breakMinutes)
-                        isPresented = false
-                    }
-                }
-                .disabled(name.isEmpty)
-                // 保存ボタンを強調する（青くする）
-                .keyboardShortcut(.defaultAction)
-            }
-            .padding()
-        }
-        .frame(width: 350, height: 250)
+    private func isDefaultPreset(_ name: String) -> Bool {
+        return ["学習", "ポモドーロ", "ショート"].contains(name)
     }
 }

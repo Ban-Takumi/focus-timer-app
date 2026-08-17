@@ -64,8 +64,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     @objc func statusBarButtonClicked(sender: NSStatusBarButton) {
-        let event = NSApp.currentEvent!
-        if event.type == .rightMouseUp {
+        if let event = NSApp.currentEvent, event.type == .rightMouseUp {
             // 右クリック: メニューを表示
             showMenu()
         } else {

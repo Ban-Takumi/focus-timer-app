@@ -9,12 +9,66 @@ import WidgetKit
 import SwiftUI
 import Charts
 
-// APIレスポンス解析用の構造体
+// MARK: - Constants & Models
+
+enum WidgetConfig {
+    static let baseURL = "https://focus-timer-app-6u58.onrender.com"
+    static let appGroupID = "group.com.bantakumi.FocusTimer"
+    static let dailyFocusGoalKey = "dailyFocusGoalMinutes"
+    static let defaultGoalMinutes: Int = 120
+}
+
+/// APIレスポンス解析用の構造体
 struct DailyStat: Decodable, Identifiable {
     let date: String
     let total_duration_minutes: Int
     var id: String { date }
 }
+
+struct SimpleEntry: TimelineEntry {
+    let date: Date
+    let todayDuration: Int
+    let weeklyStats: [DailyStat]
+}
+
+// MARK: - Helpers
+
+enum WidgetTheme {
+    static let dateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        return formatter
+    }()
+    
+    static let weekdayFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "ja_JP")
+        formatter.dateFormat = "E"
+        return formatter
+    }()
+    
+    static func weekdayString(from dateStr: String) -> String {
+        guard let date = dateFormatter.date(from: dateStr) else { return "" }
+        return weekdayFormatter.string(from: date)
+    }
+    
+    static func colorForDateString(_ dateStr: String) -> Color {
+        guard let date = dateFormatter.date(from: dateStr) else { return .orange }
+        let weekday = Calendar.current.component(.weekday, from: date)
+        switch weekday {
+        case 1: return .red      // 日
+        case 2: return .orange   // 月
+        case 3: return .yellow   // 火
+        case 4: return .green    // 水
+        case 5: return .cyan     // 木
+        case 6: return .blue     // 金
+        case 7: return .purple   // 土
+        default: return .orange
+        }
+    }
+}
+
+// MARK: - Timeline Provider
 
 struct Provider: TimelineProvider {
     func placeholder(in context: Context) -> SimpleEntry {
@@ -37,8 +91,7 @@ struct Provider: TimelineProvider {
     }
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<Entry>) -> ()) {
-        // テスト環境の場合は http://127.0.0.1:8000/stats/weekly に変更してください。
-        guard let url = URL(string: "https://focus-timer-app-6u58.onrender.com/stats/weekly") else {
+        guard let url = URL(string: "\(WidgetConfig.baseURL)/stats/weekly") else {
             let entry = SimpleEntry(date: Date(), todayDuration: 0, weeklyStats: [])
             let timeline = Timeline(entries: [entry], policy: .after(Date().addingTimeInterval(15 * 60)))
             completion(timeline)
@@ -52,21 +105,13 @@ struct Provider: TimelineProvider {
             
             if let data = data, let decoded = try? JSONDecoder().decode([DailyStat].self, from: data) {
                 stats = decoded
-                
-                // 今日の日付のデータを検索して取得
-                let formatter = DateFormatter()
-                formatter.dateFormat = "yyyy-MM-dd"
-                let todayString = formatter.string(from: Date())
-                
+                let todayString = WidgetTheme.dateFormatter.string(from: Date())
                 if let todayStat = stats.first(where: { $0.date == todayString }) {
                     todayDuration = todayStat.total_duration_minutes
-                } else {
-                    todayDuration = 0
                 }
             }
             
             let entry = SimpleEntry(date: Date(), todayDuration: todayDuration, weeklyStats: stats)
-            // 次の更新タイミング（15分後）を設定
             let nextUpdate = Calendar.current.date(byAdding: .minute, value: 15, to: Date())!
             let timeline = Timeline(entries: [entry], policy: .after(nextUpdate))
             completion(timeline)
@@ -74,13 +119,9 @@ struct Provider: TimelineProvider {
     }
 }
 
-struct SimpleEntry: TimelineEntry {
-    let date: Date
-    let todayDuration: Int
-    let weeklyStats: [DailyStat]
-}
+// MARK: - Widget Views
 
-struct FocusTimerWidgetEntryView : View {
+struct FocusTimerWidgetEntryView: View {
     var entry: Provider.Entry
     @Environment(\.widgetFamily) var family
 
@@ -98,7 +139,7 @@ struct FocusTimerWidgetEntryView : View {
     }
 }
 
-// 従来のSmallサイズのウィジェットUI
+/// SmallサイズのウィジェットUI（今日の集中時間）
 struct SmallWidgetView: View {
     var entry: Provider.Entry
     
@@ -132,39 +173,9 @@ struct SmallWidgetView: View {
     }
 }
 
-// 新しいチャート表示用のUI (Medium / Large用)
+/// チャート表示用のUI (Medium / Large用)
 struct WeeklyChartWidgetView: View {
     var entry: Provider.Entry
-    
-    // 曜日ごとに色を判定する関数
-    func colorForDateString(_ dateStr: String) -> Color {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd"
-        guard let date = formatter.date(from: dateStr) else { return .orange }
-        
-        let weekday = Calendar.current.component(.weekday, from: date)
-        switch weekday {
-        case 1: return .red      // 日
-        case 2: return .orange   // 月
-        case 3: return .yellow   // 火
-        case 4: return .green    // 水
-        case 5: return .cyan     // 木
-        case 6: return .blue     // 金
-        case 7: return .purple   // 土
-        default: return .orange
-        }
-    }
-    
-    // 日付文字列を「月」「火」のような曜日文字列に変換する関数
-    func weekdayString(from dateStr: String) -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd"
-        guard let date = formatter.date(from: dateStr) else { return "" }
-        
-        formatter.locale = Locale(identifier: "ja_JP")
-        formatter.dateFormat = "E"
-        return formatter.string(from: date)
-    }
     
     var body: some View {
         VStack(alignment: .leading) {
@@ -181,10 +192,10 @@ struct WeeklyChartWidgetView: View {
                 Chart {
                     ForEach(entry.weeklyStats) { stat in
                         BarMark(
-                            x: .value("曜日", weekdayString(from: stat.date)),
+                            x: .value("曜日", WidgetTheme.weekdayString(from: stat.date)),
                             y: .value("集中時間(分)", stat.total_duration_minutes)
                         )
-                        .foregroundStyle(colorForDateString(stat.date))
+                        .foregroundStyle(WidgetTheme.colorForDateString(stat.date))
                         .annotation(position: .top) {
                             Text("\(stat.total_duration_minutes)")
                                 .font(.caption2)
@@ -198,7 +209,7 @@ struct WeeklyChartWidgetView: View {
     }
 }
 
-// Extra Large用のUI (左に今週のグラフ、右に今日の時間を配置)
+/// Extra Large用のUI (左に今週のグラフ、右に今日の時間)
 struct ExtraLargeWidgetView: View {
     var entry: Provider.Entry
     
@@ -215,47 +226,13 @@ struct ExtraLargeWidgetView: View {
     }
 }
 
-struct FocusTimerWidget: Widget {
-    let kind: String = "FocusTimerWidget"
+// MARK: - Goal Widget View
 
-    var body: some WidgetConfiguration {
-        StaticConfiguration(kind: kind, provider: Provider()) { entry in
-            if #available(macOS 14.0, iOS 17.0, *) {
-                FocusTimerWidgetEntryView(entry: entry)
-                    .containerBackground(.fill.tertiary, for: .widget)
-            } else {
-                FocusTimerWidgetEntryView(entry: entry)
-                    .padding()
-                    .background()
-            }
-        }
-        .configurationDisplayName("Focus Timer")
-        .description("今日の集中時間や今週の推移を表示します。")
-        .supportedFamilies([.systemSmall, .systemMedium, .systemLarge, .systemExtraLarge])
-    }
-}
-
-#Preview(as: .systemMedium) {
-    FocusTimerWidget()
-} timeline: {
-    SimpleEntry(date: .now, todayDuration: 125, weeklyStats: [
-        DailyStat(date: "2026-07-05", total_duration_minutes: 25),
-        DailyStat(date: "2026-07-06", total_duration_minutes: 50),
-        DailyStat(date: "2026-07-07", total_duration_minutes: 0),
-        DailyStat(date: "2026-07-08", total_duration_minutes: 100),
-        DailyStat(date: "2026-07-09", total_duration_minutes: 75),
-        DailyStat(date: "2026-07-10", total_duration_minutes: 25),
-        DailyStat(date: "2026-07-11", total_duration_minutes: 125)
-    ])
-}
-
-// ----------------------------------------------------
-// ゴール専用ウィジェット (達成度を % で表示)
-// ----------------------------------------------------
-
+/// ゴール専用ウィジェット (達成度を % で表示)
 struct GoalWidgetView: View {
     var entry: Provider.Entry
-    @AppStorage("dailyFocusGoalMinutes", store: UserDefaults(suiteName: "group.com.bantakumi.FocusTimer")) var dailyFocusGoalMinutes: Int = 120
+    @AppStorage(WidgetConfig.dailyFocusGoalKey, store: UserDefaults(suiteName: WidgetConfig.appGroupID))
+    var dailyFocusGoalMinutes: Int = WidgetConfig.defaultGoalMinutes
     
     var body: some View {
         ZStack {
@@ -287,6 +264,28 @@ struct GoalWidgetView: View {
     }
 }
 
+// MARK: - Widget Configurations
+
+struct FocusTimerWidget: Widget {
+    let kind: String = "FocusTimerWidget"
+
+    var body: some WidgetConfiguration {
+        StaticConfiguration(kind: kind, provider: Provider()) { entry in
+            if #available(macOS 14.0, iOS 17.0, *) {
+                FocusTimerWidgetEntryView(entry: entry)
+                    .containerBackground(.fill.tertiary, for: .widget)
+            } else {
+                FocusTimerWidgetEntryView(entry: entry)
+                    .padding()
+                    .background()
+            }
+        }
+        .configurationDisplayName("Focus Timer")
+        .description("今日の集中時間や今週の推移を表示します。")
+        .supportedFamilies([.systemSmall, .systemMedium, .systemLarge, .systemExtraLarge])
+    }
+}
+
 struct FocusGoalWidget: Widget {
     let kind: String = "FocusGoalWidget"
 
@@ -305,4 +304,18 @@ struct FocusGoalWidget: Widget {
         .description("今日の目標達成度をパーセントで表示します。")
         .supportedFamilies([.systemSmall])
     }
+}
+
+#Preview(as: .systemMedium) {
+    FocusTimerWidget()
+} timeline: {
+    SimpleEntry(date: .now, todayDuration: 125, weeklyStats: [
+        DailyStat(date: "2026-07-05", total_duration_minutes: 25),
+        DailyStat(date: "2026-07-06", total_duration_minutes: 50),
+        DailyStat(date: "2026-07-07", total_duration_minutes: 0),
+        DailyStat(date: "2026-07-08", total_duration_minutes: 100),
+        DailyStat(date: "2026-07-09", total_duration_minutes: 75),
+        DailyStat(date: "2026-07-10", total_duration_minutes: 25),
+        DailyStat(date: "2026-07-11", total_duration_minutes: 125)
+    ])
 }

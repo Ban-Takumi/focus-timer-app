@@ -52,7 +52,7 @@ FocusTimerは、作業への没入をサポートし、日々の積み重ねを�
 *   **フレームワーク**: SwiftUI, WidgetKit
 *   **アーキテクチャ**: MVVMパターン
 *   **データ共有**: `App Groups` (`UserDefaults`) を用いたメインアプリとウィジェット拡張間のセキュアなデータ同期
-*   **UI/UX**: `SwiftUI Charts` を用いた高度なグラフ描画、`MenuBarExtra` を用いた常駐アプリ化、`NotificationCenter` を用いた状態監視とウィンドウ制御
+*   **UI/UX**: `SwiftUI Charts` を用いた高度なグラフ描画、`NSStatusItem` / `NSPopover` による常駐・ポップオーバー制御、`NotificationCenter` を用いた状態監視とウィンドウ制御
 
 ### Backend & Infrastructure
 *   **言語**: Python 3.x
@@ -69,7 +69,7 @@ FocusTimerは、作業への没入をサポートし、日々の積み重ねを�
 
 ブラウザ上で動くWebアプリではなく、あえて **macOSネイティブアプリ** として設計することで、以下のような「OSと深く統合された、触り心地の良い体験」の実現を目指しました。
 
-*   `MenuBarExtra` を活用した、いつでもアクセスできるメニューバー常駐
+*   `NSStatusItem` / `NSPopover` を活用した、いつでもアクセスできるメニューバー常駐
 *   `WidgetKit` を用いた、日々の積み重ね（グラフや達成度）の美しい可視化
 *   `EventKit` を通じた、OS標準のリマインダーアプリとのシームレスなタスク連携
 

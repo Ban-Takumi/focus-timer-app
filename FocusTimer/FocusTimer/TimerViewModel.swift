@@ -1,49 +1,15 @@
 import Foundation
 import Combine
 import WidgetKit
-import EventKit
 import SwiftUI
 
 extension Notification.Name {
     static let timerDidFinish = Notification.Name("timerDidFinish")
 }
 
-enum TimerMode: String {
-    case focus = "Focus Time"
-    case breakTime = "Break Time"
-}
-
-struct TimerPreset: Identifiable, Codable, Hashable {
-    var id: Int?
-    var name: String
-    var focus_minutes: Int
-    var break_minutes: Int
-}
-
-struct DailyStat: Codable, Hashable {
-    let date: String
-    let total_duration_minutes: Int
-}
-
-struct TimelineRecord: Codable, Hashable, Identifiable {
-    let id: Int
-    let task_name: String
-    let duration_minutes: Int
-    let date: String
-    let created_at: String
-    
-    var createdAtDate: Date {
-        let formatter = ISO8601DateFormatter()
-        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        if let date = formatter.date(from: created_at) { return date }
-        
-        formatter.formatOptions = [.withInternetDateTime]
-        return formatter.date(from: created_at) ?? Date()
-    }
-}
-
-
+@MainActor
 class TimerViewModel: ObservableObject {
+    // MARK: - Published Properties
     @Published var mode: TimerMode = .focus
     @Published var timeRemaining: Int = 50 * 60
     @Published var lastSavedTimeRemaining: Int = 50 * 60
@@ -54,10 +20,11 @@ class TimerViewModel: ObservableObject {
     @Published var weeklyStats: [DailyStat] = []
     @Published var todayTimeline: [TimelineRecord] = []
     
-    @AppStorage("dailyFocusGoalMinutes", store: UserDefaults(suiteName: "group.com.bantakumi.FocusTimer")) var dailyFocusGoalMinutes: Int = 120
+    @AppStorage(AppConfig.StorageKey.dailyFocusGoalMinutes, store: UserDefaults(suiteName: AppConfig.appGroupID))
+    var dailyFocusGoalMinutes: Int = AppConfig.defaultDailyFocusGoalMinutes
+    
     @Published var todayTotalMinutes: Int = 0
 
-    
     @Published var selectedPreset: TimerPreset? {
         didSet {
             if let preset = selectedPreset, !isRunning {
@@ -76,18 +43,18 @@ class TimerViewModel: ObservableObject {
     @Published var focusTime: Int = 50 * 60
     @Published var breakTime: Int = 10 * 60
     
+    // MARK: - Private Properties
     private var timer: AnyCancellable?
+    private let apiService = APIService.shared
     
-    // ベースURL: 本番（Render）環境
-    private let baseURL = "https://focus-timer-app-6u58.onrender.com"
-    // ローカルテスト時は以下に切り替え
-    // private let baseURL = "http://127.0.0.1:8000"
-    
+    // MARK: - Initializer
     init() {
         fetchPresets()
     }
     
-    // タイマー開始
+    // MARK: - Timer Controls
+    
+    /// タイマーを開始する
     func start() {
         guard !isRunning else { return }
         isRunning = true
@@ -105,14 +72,14 @@ class TimerViewModel: ObservableObject {
             }
     }
     
-    // タイマー停止
+    /// タイマーを一時停止する
     func stop() {
         isRunning = false
         timer?.cancel()
         timer = nil
     }
     
-    // タイマーリセット
+    /// タイマーをリセットする
     func reset() {
         stop()
         timeRemaining = mode == .focus ? focusTime : breakTime
@@ -121,7 +88,7 @@ class TimerViewModel: ObservableObject {
         }
     }
     
-    // 完了して次へ（経過時間を保存し、タイマーは止めずに継続）
+    /// 現在のタスクを完了として記録し、タイマーは止めずに継続する
     func completeCurrentTaskAndContinue() {
         guard mode == .focus else { return }
         
@@ -134,7 +101,7 @@ class TimerViewModel: ObservableObject {
         currentTaskName = ""
     }
     
-    // 0になったときの処理
+    /// カウントダウンが0になったときの終了処理
     private func timerFinished() {
         stop()
         
@@ -157,232 +124,97 @@ class TimerViewModel: ObservableObject {
         }
     }
     
-    // バックエンドからプリセットを取得
+    // MARK: - API / Data Actions
+    
+    /// バックエンドからプリセットを取得
     func fetchPresets() {
-        guard let url = URL(string: "\(baseURL)/presets/") else { return }
-        
-        URLSession.shared.dataTask(with: url) { [weak self] data, response, error in
-            if let error = error {
-                print("プリセット取得エラー: \(error)")
-                return
-            }
-            guard let data = data else { return }
+        Task {
             do {
-                let decoded = try JSONDecoder().decode([TimerPreset].self, from: data)
-                DispatchQueue.main.async {
-                    self?.presets = decoded
-                    // デフォルトプリセットをセット (未選択の場合のみ。学習:50分/10分を優先)
-                    if self?.selectedPreset == nil {
-                        if let defaultPreset = decoded.first(where: { $0.name == "学習" }) {
-                            self?.selectedPreset = defaultPreset
-                        } else if let firstPreset = decoded.first {
-                            self?.selectedPreset = firstPreset
-                        }
+                let fetchedPresets = try await apiService.fetchPresets()
+                self.presets = fetchedPresets
+                
+                // デフォルトプリセットをセット (未選択の場合のみ。「学習:50分/10分」を優先)
+                if self.selectedPreset == nil {
+                    if let defaultPreset = fetchedPresets.first(where: { $0.name == "学習" }) {
+                        self.selectedPreset = defaultPreset
+                    } else if let firstPreset = fetchedPresets.first {
+                        self.selectedPreset = firstPreset
                     }
                 }
             } catch {
-                print("プリセットデコードエラー: \(error)")
+                print("プリセット取得エラー: \(error.localizedDescription)")
             }
-        }.resume()
+        }
     }
     
-    // バックエンドにプリセットを作成
+    /// 新しいプリセットを作成
     func createPreset(name: String, focusMinutes: Int, breakMinutes: Int) {
-        guard let url = URL(string: "\(baseURL)/presets/") else { return }
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        
-        let presetData: [String: Any] = [
-            "name": name,
-            "focus_minutes": focusMinutes,
-            "break_minutes": breakMinutes
-        ]
-        
-        do {
-            request.httpBody = try JSONSerialization.data(withJSONObject: presetData, options: [])
-        } catch {
-            print("エンコードエラー: \(error)")
-            return
-        }
-        
-        URLSession.shared.dataTask(with: request) { [weak self] data, response, error in
-            if let error = error {
-                print("通信エラー: \(error)")
-                return
+        Task {
+            do {
+                _ = try await apiService.createPreset(name: name, focusMinutes: focusMinutes, breakMinutes: breakMinutes)
+                self.fetchPresets()
+            } catch {
+                print("プリセット作成エラー: \(error.localizedDescription)")
             }
-            self?.fetchPresets()
-        }.resume()
+        }
     }
 
-    // プリセットを削除
+    /// プリセットを削除
     func deletePreset(id: Int) {
-        guard let url = URL(string: "\(baseURL)/presets/\(id)") else { return }
-        var request = URLRequest(url: url)
-        request.httpMethod = "DELETE"
-        
-        URLSession.shared.dataTask(with: request) { [weak self] data, response, error in
-            if let error = error {
-                print("削除エラー: \(error)")
-                return
+        Task {
+            do {
+                try await apiService.deletePreset(id: id)
+                self.fetchPresets()
+            } catch {
+                print("プリセット削除エラー: \(error.localizedDescription)")
             }
-            self?.fetchPresets()
-        }.resume()
+        }
     }
     
-    // バックエンドへ記録を送信
+    /// バックエンドへポモドーロ記録を送信
     private func saveRecord(elapsedSeconds: Int) {
-        guard let url = URL(string: "\(baseURL)/records/") else { return }
-        
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        
         let durationMinutes = elapsedSeconds / 60
+        let taskName = currentTaskName.isEmpty ? (selectedPreset?.name ?? "Focus Session") : currentTaskName
         
-        // 送信するデータ（スキーマに合わせて作成）
-        let recordData: [String: Any] = [
-            "task_name": currentTaskName.isEmpty ? (selectedPreset?.name ?? "Focus Session") : currentTaskName,
-            "duration_minutes": durationMinutes,
-            "date": DateFormatter.yyyyMMdd.string(from: Date())
-        ]
-        
-        do {
-            request.httpBody = try JSONSerialization.data(withJSONObject: recordData, options: [])
-        } catch {
-            print("JSONエンコードエラー: \(error)")
-            return
+        Task {
+            do {
+                try await apiService.saveRecord(taskName: taskName, durationMinutes: durationMinutes)
+                // 通信成功後にウィジェットの表示を更新
+                WidgetCenter.shared.reloadAllTimelines()
+            } catch {
+                print("記録保存エラー: \(error.localizedDescription)")
+            }
         }
-        
-        URLSession.shared.dataTask(with: request) { data, response, error in
-            if let error = error {
-                print("通信エラー: \(error)")
-                return
-            }
-            if let httpResponse = response as? HTTPURLResponse {
-                print("ステータスコード: \(httpResponse.statusCode)")
-            }
-            
-            // 通信成功後にウィジェットの表示を強制的に更新（リロード）する
-            WidgetCenter.shared.reloadAllTimelines()
-            
-        }.resume()
     }
     
-    // バックエンドから今週の統計を取得
+    /// バックエンドから今週の統計を取得
     func fetchWeeklyStats() {
-        guard let url = URL(string: "\(baseURL)/stats/weekly") else { return }
-        
-        URLSession.shared.dataTask(with: url) { [weak self] data, response, error in
-            if let error = error {
-                print("統計取得エラー: \(error)")
-                return
-            }
-            guard let data = data else { return }
+        Task {
             do {
-                let decoded = try JSONDecoder().decode([DailyStat].self, from: data)
-                DispatchQueue.main.async {
-                    self?.weeklyStats = decoded
-                    
-                    // 今日の合計集中時間を計算
-                    let formatter = DateFormatter()
-                    formatter.dateFormat = "yyyy-MM-dd"
-                    let todayString = formatter.string(from: Date())
-                    if let todayStat = decoded.first(where: { $0.date == todayString }) {
-                        self?.todayTotalMinutes = todayStat.total_duration_minutes
-                    } else {
-                        self?.todayTotalMinutes = 0
-                    }
+                let stats = try await apiService.fetchWeeklyStats()
+                self.weeklyStats = stats
+                
+                // 今日の合計集中時間を計算
+                let todayString = AppTheme.dateFormatterYYYYMMDD.string(from: Date())
+                if let todayStat = stats.first(where: { $0.date == todayString }) {
+                    self.todayTotalMinutes = todayStat.total_duration_minutes
+                } else {
+                    self.todayTotalMinutes = 0
                 }
             } catch {
-                print("統計デコードエラー: \(error)")
+                print("統計取得エラー: \(error.localizedDescription)")
             }
-        }.resume()
+        }
     }
     
-    // バックエンドから今日のタイムライン統計を取得
+    /// バックエンドから今日のタイムライン統計を取得
     func fetchTimeline() {
-        guard let url = URL(string: "\(baseURL)/stats/timeline") else { return }
-        
-        URLSession.shared.dataTask(with: url) { [weak self] data, response, error in
-            if let error = error {
-                print("タイムライン取得エラー: \(error)")
-                return
-            }
-            guard let data = data else { return }
+        Task {
             do {
-                let decoded = try JSONDecoder().decode([TimelineRecord].self, from: data)
-                DispatchQueue.main.async {
-                    self?.todayTimeline = decoded
-                }
+                let timeline = try await apiService.fetchTimeline()
+                self.todayTimeline = timeline
             } catch {
-                print("タイムラインデコードエラー: \(error)")
-            }
-        }.resume()
-    }
-}
-
-// DateFormatterの拡張（日付用）
-extension DateFormatter {
-    static let yyyyMMdd: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd"
-        return formatter
-    }()
-}
-
-// MARK: - Reminder Manager
-class ReminderManager: ObservableObject {
-    private let eventStore = EKEventStore()
-    
-    @Published var reminders: [EKReminder] = []
-    @Published var isAuthorized: Bool = false
-    
-    init() {
-        checkAccess()
-    }
-    
-    func checkAccess() {
-        let status = EKEventStore.authorizationStatus(for: .reminder)
-        switch status {
-        case .authorized:
-            isAuthorized = true
-            fetchReminders()
-        case .notDetermined:
-            requestAccess()
-        default:
-            isAuthorized = false
-        }
-    }
-    
-    func requestAccess() {
-        if #available(macOS 14.0, *) {
-            eventStore.requestFullAccessToReminders { [weak self] granted, error in
-                DispatchQueue.main.async {
-                    self?.isAuthorized = granted
-                    if granted {
-                        self?.fetchReminders()
-                    }
-                }
-            }
-        } else {
-            eventStore.requestAccess(to: .reminder) { [weak self] granted, error in
-                DispatchQueue.main.async {
-                    self?.isAuthorized = granted
-                    if granted {
-                        self?.fetchReminders()
-                    }
-                }
-            }
-        }
-    }
-    
-    func fetchReminders() {
-        guard isAuthorized else { return }
-        let predicate = eventStore.predicateForIncompleteReminders(withDueDateStarting: nil, ending: nil, calendars: nil)
-        eventStore.fetchReminders(matching: predicate) { [weak self] fetchedReminders in
-            DispatchQueue.main.async {
-                self?.reminders = fetchedReminders ?? []
+                print("タイムライン取得エラー: \(error.localizedDescription)")
             }
         }
     }
