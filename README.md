@@ -12,8 +12,7 @@
 FocusTimerは、作業への没入をサポートし、日々の積み重ねをデスクトップ上で美しく可視化するために開発されたMac向けネイティブアプリケーションです。
 
 <div align="center">
-  <!-- ※ここにアプリのメイン画面や利用シーンがわかるデモGIFを配置すると非常に魅力的になります -->
-  <img src="docs/assets/hero_image.png" alt="FocusTimer Main UI" width="600">
+  <img src="docs/assets/hero_image.png" alt="FocusTimer Main UI" width="700">
 </div>
 
 ## 📑 目次
@@ -23,24 +22,39 @@ FocusTimerは、作業への没入をサポートし、日々の積み重ねを�
 
 ## 🚀 アプリの主な特徴
 
-*   **メニューバー常駐 & 自動ポップオーバー**
+*   **メニューバー常駐 & 自動ポップオーバー**  
     Macのメニューバーに常駐し、いつでもワンクリックでタイマーにアクセス可能。
     タイマー終了時（集中・休憩の切り替え時）には、他のアプリを操作していても自動的にポップオーバーが展開し、シームレスに次のアクションへ移行できます。
-    > *(💡 画像配置の工夫: ここにポップオーバーが自動展開する様子を伝える短いGIF画像を置くと使用感が伝わります)*
+    <div align="center">
+      <img src="docs/assets/menubar_popover.gif" alt="Menubar Popover Demo" width="650">
+    </div>
 
-*   **多彩なデスクトップウィジェット (WidgetKit)**
+*   **多彩なデスクトップウィジェット (WidgetKit)**  
     ウィジェットギャラリーから選べる複数のサイズに対応。`SwiftUI Charts` を活用した週間グラフや、1日のデイリーゴール達成度をリングUIで表示し、モチベーションを維持します。
-    > *(💡 画像配置の工夫: ここにウィジェット（Small, Medium, Largeなど）のバリエーションを示すスクリーンショットを横並びで配置するのがおすすめです)*
+    <div align="center">
+      <img src="docs/assets/widget_variations.png" alt="Desktop Widgets" width="650">
+    </div>
 
-*   **タスク管理 & Apple「リマインダー」連携**
+*   **用途に合わせたプリセット管理 & 目標設定**  
+    「ポモドーロ（25分/5分）」や「学習（50分/10分）」、「授業（90分/15分）」など、作業スタイルに応じたタイマーをワンクリックで切り替え。カスタムプリセットの追加や、ウィジェットと連動する1日の集中目標時間も自由にカスタマイズ可能です。
+    <div align="center">
+      <img src="docs/assets/settings_preset.png" alt="Settings & Presets" width="550">
+    </div>
+
+*   **タスク管理 & Apple「リマインダー」連携**  
     OS標準のリマインダーアプリからタスクを同期・読み込み可能。
     「完了して次へ」ボタンで、タイマーの進行を止めることなくタスクを連続してこなしていく体験を実現しました。
+    <div align="center">
+      <img src="docs/assets/reminders_sync.png" alt="Apple Reminders Sync" width="650">
+    </div>
 
-*   **詳細な統計とタイムライングラフ**
+*   **詳細な統計とタイムライングラフ**  
     朝8時を起点とした24時間のタイムラインを実装。いつ、どのタスクに集中したかを視覚的に振り返ることができます。
-    > *(💡 画像配置の工夫: ここにタイムライングラフや統計画面のスクリーンショットを追加します)*
+    <div align="center">
+      <img src="docs/assets/statistics_timeline.png" alt="Statistics & Timeline Chart" width="550">
+    </div>
 
-*   **クラウド同期 (FastAPI + データベース)**
+*   **クラウド同期 (FastAPI + データベース)**  
     バックエンドに FastAPI を採用し、記録データはリアルタイムに保存され、複数端末やバックグラウンドでの安定したデータ管理を実現しています。
 
 ## 🛠️ 使用技術・アーキテクチャ
