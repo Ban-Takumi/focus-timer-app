@@ -82,7 +82,6 @@ FocusTimerは、作業への没入をサポートし、日々の積み重ねを�
 | :--- | :--- | :--- |
 | **macOS App & Widget** | 対応OS | `macOS 14.0 (Sonoma)` 以降 (検証済み: `macOS 15.x`) |
 | | 開発ツール | `Xcode 15.0+` / `Swift 5.9+` |
-| | アプリバージョン | `v1.7` (Build 5) |
 | **Backend API** | 言語・ランタイム | `Python 3.11+` |
 | | 主要パッケージ | `FastAPI`, `Uvicorn`, `SQLAlchemy`, `psycopg2-binary`, `pydantic` |
 | | データベース | `PostgreSQL 15+` (Supabase) |
