@@ -18,6 +18,7 @@ FocusTimerは、作業への没入をサポートし、日々の積み重ねを�
 ## 📑 目次
 - [🚀 アプリの主な特徴](#-アプリの主な特徴)
 - [🛠️ 使用技術・アーキテクチャ](#️-使用技術アーキテクチャ)
+- [⚙️ 動作要件・システム環境](#️-動作要件システム環境)
 - [💡 開発の背景](#-開発の背景)
 
 ## 🚀 アプリの主な特徴
@@ -69,13 +70,22 @@ FocusTimerは、作業への没入をサポートし、日々の積み重ねを�
 *   **UI/UX**: `SwiftUI Charts` を用いた高度なグラフ描画、`NSStatusItem` / `NSPopover` による常駐・ポップオーバー制御、`NotificationCenter` を用いた状態監視とウィンドウ制御
 
 ### Backend & Infrastructure
-*   **言語**: Python 3.x
-*   **フレームワーク**: FastAPI
-*   **データベース**: PostgreSQL (Supabase)
-*   **ORM**: SQLAlchemy
+*   **言語**: Python 3.11+
+*   **フレームワーク**: FastAPI (v0.110+)
+*   **データベース**: PostgreSQL (Supabase) / SQLite (Local)
+*   **ORM**: SQLAlchemy (v2.0+)
 *   **インフラ・ホスティング**: Render
 
+## ⚙️ 動作要件・システム環境
 
+| レイヤー | 項目 | 要件・バージョン |
+| :--- | :--- | :--- |
+| **macOS App & Widget** | 対応OS | `macOS 14.0 (Sonoma)` 以降 (検証済み: `macOS 15.x`) |
+| | 開発ツール | `Xcode 15.0+` / `Swift 5.9+` |
+| | アプリバージョン | `v1.7` (Build 5) |
+| **Backend API** | 言語・ランタイム | `Python 3.11+` |
+| | 主要パッケージ | `FastAPI`, `Uvicorn`, `SQLAlchemy`, `psycopg2-binary`, `pydantic` |
+| | データベース | `PostgreSQL 15+` (Supabase) |
 
 ## 💡 開発の背景
 
