@@ -216,3 +216,4 @@ __marimo__/
 
 *.xcuserstate
 .DS_Store
+docs/*.md
