@@ -214,6 +214,16 @@ marimo/_static/
 marimo/_lsp/
 __marimo__/
 
+# Xcode User Data
+xcuserdata/
+*.xcuserdatad/
 *.xcuserstate
+
+# Local Databases & Logs
+*.db
+*.sqlite3
+*.log
+logs.txt
+
 .DS_Store
 docs/*.md
