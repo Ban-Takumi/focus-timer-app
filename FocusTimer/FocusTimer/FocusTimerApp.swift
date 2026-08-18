@@ -1,9 +1,3 @@
-//
-//  FocusTimerApp.swift
-//  FocusTimer
-//
-//  Created by Takumi Ban on 2026/06/25.
-//
 
 import SwiftUI
 

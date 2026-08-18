@@ -8,7 +8,7 @@ enum AppConfig {
     // static let baseURL = "http://127.0.0.1:8000"
     
     /// App Group 識別子（Widget とのデータ共有用）
-    static let appGroupID = "group.com.bantakumi.FocusTimer"
+    static let appGroupID = "group.com.fukutaku.FocusTimer"
     
     /// デフォルトの1日集中目標（分）
     static let defaultDailyFocusGoalMinutes: Int = 120

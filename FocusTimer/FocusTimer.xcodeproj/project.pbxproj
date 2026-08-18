@@ -400,7 +400,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MARKETING_VERSION = 1.7;
-				PRODUCT_BUNDLE_IDENTIFIER = fukusuke.FocusTimer;
+				PRODUCT_BUNDLE_IDENTIFIER = fukutaku.FocusTimer;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				REGISTER_APP_GROUPS = YES;
@@ -446,7 +446,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MARKETING_VERSION = 1.7;
-				PRODUCT_BUNDLE_IDENTIFIER = fukusuke.FocusTimer;
+				PRODUCT_BUNDLE_IDENTIFIER = fukutaku.FocusTimer;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				REGISTER_APP_GROUPS = YES;
@@ -490,7 +490,7 @@
 				);
 				MACOSX_DEPLOYMENT_TARGET = 15.6;
 				MARKETING_VERSION = 1.7;
-				PRODUCT_BUNDLE_IDENTIFIER = fukusuke.FocusTimer.ChartWidget;
+				PRODUCT_BUNDLE_IDENTIFIER = fukutaku.FocusTimer.ChartWidget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
 				SKIP_INSTALL = YES;
@@ -533,7 +533,7 @@
 				);
 				MACOSX_DEPLOYMENT_TARGET = 15.6;
 				MARKETING_VERSION = 1.7;
-				PRODUCT_BUNDLE_IDENTIFIER = fukusuke.FocusTimer.ChartWidget;
+				PRODUCT_BUNDLE_IDENTIFIER = fukutaku.FocusTimer.ChartWidget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
 				SKIP_INSTALL = YES;

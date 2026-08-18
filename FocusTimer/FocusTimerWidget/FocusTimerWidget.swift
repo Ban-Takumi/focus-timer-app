@@ -1,9 +1,3 @@
-//
-//  FocusTimerWidget.swift
-//  FocusTimerWidget
-//
-//  Created by Takumi Ban on 2026/06/25.
-//
 
 import WidgetKit
 import SwiftUI
@@ -13,7 +7,7 @@ import Charts
 
 enum WidgetConfig {
     static let baseURL = "https://focus-timer-app-6u58.onrender.com"
-    static let appGroupID = "group.com.bantakumi.FocusTimer"
+    static let appGroupID = "group.com.fukutaku.FocusTimer"
     static let dailyFocusGoalKey = "dailyFocusGoalMinutes"
     static let defaultGoalMinutes: Int = 120
 }

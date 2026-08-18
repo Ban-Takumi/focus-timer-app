@@ -1,9 +1,3 @@
-//
-//  FocusTimerWidgetBundle.swift
-//  FocusTimerWidget
-//
-//  Created by Takumi Ban on 2026/06/25.
-//
 
 import WidgetKit
 import SwiftUI
